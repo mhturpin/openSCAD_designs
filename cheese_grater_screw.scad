@@ -7,7 +7,7 @@ core_radius = 4.5;
 thread_starts = 2;
 thread_turns = 2;
 length = 15;
-bore_radius = 1.75;
+bore_radius = 2;
 
 outer_radius = core_radius + thread_height;
 // The angle that the inside of the thread intercepts the cross section
@@ -32,7 +32,7 @@ function lead_angle(radius, length) = atan(length/(2*radius*PI));
 function to_deg(t) = t*180/PI;
 
 module screw() {
-  linear_extrude(height = length, twist = -720) {
+  linear_extrude(height = length, twist = -720, convexity = 10) {
     difference() {
       circle(core_radius);
       circle(bore_radius);
@@ -64,7 +64,20 @@ module thread_cross_section() {
   rotate(tip_angle_offset) circular_segment(outer_radius, thread_tip_arc_angle);
 }
 
+// Only does up to 180 degrees
+module ring_arc(r_inner, r_outer, height, angle) {
+  difference() {
+    cylinder(height, r_outer, r_outer);
+    translate([0, 0, -1]) cylinder(height+2, r_inner, r_inner);
+    rotate(angle) translate([-r_outer - 1, 0, -1]) cube([2*r_outer + 2, r_outer + 1, height + 2]);
+    rotate(180) translate([-r_outer - 1, 0, -1]) cube([2*r_outer + 2, r_outer + 1, height + 2]);
+  }
+}
+
 difference() {
   screw();
-  translate([0, 0, 13]) cylinder(2, 1.5, 2.5);
+  translate([0, 0, 13.0001]) cylinder(2, 1.5, 2.5);
+  translate([0, 0, length-1.9]) ring_arc(core_radius, outer_radius + 1, 2, thread_base_arc_angle);
+  rotate(180) translate([0, 0, length-1.9]) ring_arc(core_radius, outer_radius + 1, 2, thread_base_arc_angle);
+  rotate(45, [1, 0, 0]) cube([outer_radius*2, core_radius*sqrt(2), core_radius*sqrt(2)], center=true);
 }
