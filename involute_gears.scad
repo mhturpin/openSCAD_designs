@@ -50,10 +50,6 @@ module gear_2d(pressure_angle, mod, num_teeth, addendum, dedendum, hole_diameter
 
     circle(hole_diameter/2);
   }
-
-  #ring(root_radius);
-  #ring(base_radius);
-  #ring(pitch_radius);
 }
 
 // Get the points for an involute gear tooth
