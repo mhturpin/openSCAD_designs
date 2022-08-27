@@ -31,13 +31,13 @@ module gear(pressure_angle = 20,
   angle_offset = 180/num_teeth - angle_from_centered;
 
   tooth_ps = tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch_radius, top_radius);
-
-  // gear_points = [for (i = [0:num_teeth-1]) rotate_points(tooth_ps, 360*i/num_teeth)];
-  // polygon(gear_points);
+  // Points are listed from +x to -x, so go clockwise
+  gear_points = [for (i = [0:num_teeth-1]) each rotate_points(tooth_ps, -360*i/num_teeth)];
+  polygon(gear_points);
 
   for (i = [0:num_teeth-1]) {
     rotate(360*i/num_teeth) {
-      polygon(tooth_ps);
+      //polygon(tooth_ps);
 
       difference() {
         //rotate(angle_offset) undercut_profile(addendum*mod, pitch_radius);
@@ -54,6 +54,7 @@ module gear(pressure_angle = 20,
 }
 
 // Get the points for an involute gear tooth
+// Center of tooth on x axis, points above x axis
 function tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch_radius, top_radius) =
   let(
     // If base_radius > root_radius, start at base_radius, else start where involute crosses root_radius
@@ -68,16 +69,8 @@ function tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch
     half_tooth_points = concat(fillet_ps, contact_ps)
   ) concat(half_tooth_points, reverse(mirror_points(half_tooth_points)));
 
-// Get the profile that a tooth makes as it meshes with a gear of the given base radius
-// Assume the worst possible undercutting, which occurs with a rack
-// Can be thought of as an offset inwards of an involute since the rack pitch line is a straight line rolling along the pitch circle of the gear
-// Start the profile when the tooth tip is deepest
-module undercut_profile(addendum, radius) {
-  points = [for (t = [0:90]) tip_arc_point(addendum, radius, t)];
-  polygon(points);
-}
-
 // Get the points for the involute section of the tooth
+// Center of tooth on x axis, points above x axis
 function contact_surface_points(base_radius, t_start, t_end, tooth_center_angle) =
   let(
     // Add start and end points to ensure the whole tooth is included
@@ -90,6 +83,7 @@ function contact_surface_points(base_radius, t_start, t_end, tooth_center_angle)
 // Round the bottom of the root if base_radius > root_radius
 // Needed because involute doesn't extend to the bottom of the root
 // TODO: return inv start if root_radius > base_radius?
+// Center of tooth on x axis, points above x axis
 function fillet_points(base_radius, root_radius, num_teeth, tooth_center_angle) =
   let(
     half_root_angle = 180/num_teeth - tooth_center_angle,
@@ -113,6 +107,15 @@ function fillet_points(base_radius, root_radius, num_teeth, tooth_center_angle) 
     end_angle = 270 + tooth_center_angle,
     start_angle = end_angle - 90 + (is_deep ? half_root_angle : 0)
   ) arc_points(fillet_radius, start_angle, end_angle, center);
+
+// Get the profile that a tooth makes as it meshes with a gear of the given base radius
+// Assume the worst possible undercutting, which occurs with a rack
+// Can be thought of as an offset inwards of an involute since the rack pitch line is a straight line rolling along the pitch circle of the gear
+// Start the profile when the tooth tip is deepest
+module undercut_profile(addendum, radius) {
+  points = [for (t = [0:90]) tip_arc_point(addendum, radius, t)];
+  polygon(points);
+}
 
 // Get the [x, y] coordinates for a point on a circle at a given angle
 function point_on_circle(r, t) = [r*cos(t), r*sin(t)];
@@ -181,7 +184,7 @@ module test_gears() {
   translate([0, 25, 0]) rotate($t*57.6) gear(pressure_angle = 20, mod = 1, num_teeth = 50);
 }
 
-//test_gears();
+test_gears();
 
 module ring(radius) {
   difference() {
@@ -189,6 +192,3 @@ module ring(radius) {
     cylinder(1, radius - 0.1, radius - 0.1, center=true);
   }
 }
-
-gear(pressure_angle = 20, mod = 1, num_teeth = 8);
-
