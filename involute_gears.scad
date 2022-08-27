@@ -5,16 +5,20 @@ $fn = 200;
 // https://mathworld.wolfram.com/CircleInvolute.html
 
 module gear(pressure_angle = 20,
-            mod = 2,
+            mod = 1,
             num_teeth = 32,
-            profile_shift = 0,
             addendum = 1,
             dedendum = 1.25,
-            backlash = 0.2,
-            root_fillet_radius = 0.2,
+            hole_diameter = 0,
             thickness = 1,
-            hole_diameter = 1) {
+            twist = 0) {
+  linear_extrude(height = thickness, twist = twist, convexity = 10) {
+    gear_2d(pressure_angle, mod, num_teeth, addendum, dedendum, hole_diameter);
+  }
+}
 
+// TODO: add profile_shift, backlash, root_fillet_radius
+module gear_2d(pressure_angle, mod, num_teeth, addendum, dedendum, hole_diameter) {
   // Base gear dimension calculations
   pitch_diameter = num_teeth*mod;
   pitch_radius = pitch_diameter/2;
@@ -43,6 +47,8 @@ module gear(pressure_angle = 20,
         mirror([0, 1, 0]) rotate(angle_offset) undercut_profile(addendum*mod, pitch_radius, top_radius);
       }
     }
+
+    circle(hole_diameter/2);
   }
 
   #ring(root_radius);
@@ -192,5 +198,5 @@ module test_gears() {
   translate([0, 25, 0]) rotate($t*57.6) gear(pressure_angle = 20, mod = 1, num_teeth = 50);
 }
 
-test_gears();
-//gear(pressure_angle = 20, mod = 1, num_teeth = 15);
+// test_gears();
+// gear(pressure_angle = 20, mod = 1, num_teeth = 15);
