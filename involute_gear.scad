@@ -44,7 +44,6 @@ module gear(pressure_angle = 20,
   circle(root_radius);
 }
 
-
 // Create an involute gear tooth
 module tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius, pitch_radius) {
   // The angle from the start of the involute curve to the center of the tooth 
@@ -185,6 +184,16 @@ function distance(p1, p2) = sqrt((p1[0] - p2[0])^2 + (p1[1] - p2[1])^2);
 function arc_points(r, t_start, t_end, center) = translate_points([for (a = [t_start:t_end]) point_on_circle(r, a)], center);
 
 
-translate([-6, -10, 0]) gear(pressure_angle = 20, modul = 1, num_teeth = 8);
-translate([14, -15, 0]) gear(pressure_angle = 20, modul = 1, num_teeth = 32);
-translate([0, 25, 0]) gear(pressure_angle = 20, modul = 1, num_teeth = 50);
+module test_gears() {
+  // Pitch radius: 8
+  // 360 degrees rotation per cycle
+  translate([20, -16, 0]) rotate($t*360 + 22.5) gear(pressure_angle = 20, modul = 1, num_teeth = 8);
+  // Pitch radius: 16
+  // 90 degrees rotation per cycle
+  translate([0, -16, 0]) rotate(-$t*90) gear(pressure_angle = 20, modul = 1, num_teeth = 32);
+  // Pitch radius: 25
+  // 57.6 degrees rotation per cycle
+  translate([0, 25, 0]) rotate($t*57.6) gear(pressure_angle = 20, modul = 1, num_teeth = 50);
+}
+
+test_gears();
