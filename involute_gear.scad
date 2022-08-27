@@ -22,31 +22,30 @@ module gear(pressure_angle = 20,
   root_radius = pitch_radius - (dedendum*modul);
   top_radius = pitch_radius + (addendum*modul);
 
-  create_teeth(num_teeth) tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius);
+  for (i = [0:num_teeth-1]) {
+    rotate(360*i/num_teeth) {
+      tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius, pitch_radius);
+    }
+  }
 
   // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=42
   rack_chordal_thickness = PI*modul/2;
   distance_rolled = rack_chordal_thickness/2 - addendum*modul*tan(pressure_angle);
   angle_from_centered = to_deg(distance_rolled/pitch_radius);
   angle_offset = 180/num_teeth - angle_from_centered;
-  
-  // #rotate(angle_offset) undercut_profile(addendum*modul, pitch_radius);
 
-  translate([0, 0, .5]) ring(root_radius);
-  translate([0, 0, .5]) ring(base_radius);
-  translate([0, 0, .5]) ring(pitch_radius);
-  //circle(root_radius);
+  #rotate(angle_offset) undercut_profile(addendum*modul, pitch_radius);
+
+  #translate([0, 0, .5]) ring(root_radius);
+  #translate([0, 0, .5]) ring(base_radius);
+  #translate([0, 0, .5]) ring(pitch_radius);
+
+  circle(root_radius);
 }
 
-// Makes all the teeth using a template tooth
-module create_teeth(num_teeth) {
-  for (i = [0:num_teeth-1]) {
-    rotate(360*i/num_teeth) children();
-  }
-}
 
 // Create an involute gear tooth
-module tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius) {
+module tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius, pitch_radius) {
   // The angle from the start of the involute curve to the center of the tooth 
   // At the pitch circle, teeth take up half the circumference, so half the tooth is 1/4 of 360/teeth
   half_tooth_angle = 90/num_teeth + inv(pressure_angle);
@@ -64,44 +63,53 @@ module tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius) {
   rotated = rotate_points(points, -half_tooth_angle);
   // Mirror points across the x axis and reverse the order so they can be concatenated
   mirrored = reverse(mirror_points(rotated));
-  
+
+  // The involute portion of the tooth
   polygon(concat(rotated, mirrored));
-  
-  
-  
-  
+
   // Round the bottom of the root if base_radius > root_radius
   // Needed because involute doesn't extend to the bottom of the root
-  angle_between_teeth = 360/num_teeth - 2*half_tooth_angle;
-  distance_between_teeth = base_radius*sin(angle_between_teeth/2)*2; // At base circle
-  
-  // if statement not quite right since teeth arent parallel
-  if (distance_between_teeth/2 < base_radius - root_radius) {
-    // can't set variables here
-    // circle deeper down
-    // touches root_radius, lines from origin to tooth fillets
+  if (base_radius > root_radius) {
+    half_root_angle = 180/num_teeth - half_tooth_angle;
+    distance_between_teeth = base_radius*sin(half_root_angle)*2; // At base circle
+    // The angle to stop making the arc for the fillet radius
+    end_angle = 270 + half_tooth_angle;
     
-    
-    fillet_radius = root_radius*sin(angle_between_teeth/2)/(1 - sin(angle_between_teeth/2));
-    center = point_on_circle(root_radius + fillet_radius, angle_between_teeth/2);
-    fillet_points = translate_points(rotate_points(arc_points(fillet_radius, 90 - angle_between_teeth/2), 180), center);
-    
-    polygon(rotate_points(fillet_points, half_tooth_angle));
-    polygon(mirror_points(rotate_points(fillet_points, half_tooth_angle)));
-  }
-  else if (base_radius > root_radius) {
+    // Extra points for creating a polygon
+    tooth_base = rotate_point([base_radius, 0], half_tooth_angle);
+    tooth_center = [pitch_radius, 0];
+
+    // For gears with fewer teeth, where the root is too deep for the circle to intersect the base circle
+    // The circle is tangent to the root_radius and the two lines connecting the edge of the teeth to the origin
+    // A right triangle is formed where sin(half_root_angle) = fillet_radius/(fillet_radius + root_radius)
+    deep_fillet_radius = root_radius*sin(half_root_angle)/(1 - sin(half_root_angle));
+
+    // For gears with a medium number of teeth, where the root is too shallow for the circle to intersect the center of the root circle
     // Find the 90 degree arc tangent to the tooth at the base radius and the root radius
     // For the intersection on the root circle:
     // x = base_radius - y, x^2 + y^2 = root_radius^2, y = fillet_radius (because 90 degree arc)
     // Solve for y: y = (base_radius +/- sqrt(2*root_radius^2 - base_radius^2))/2
     // We only care about the smaller y solution
-    intersect_y = (base_radius - sqrt(2*root_radius^2 - base_radius^2))/2;
-    fillet_radius = intersect_y;
-    // Move the points to line up with the x axis, then rotate them to line up with the tooth
-    center = [base_radius, intersect_y];
-    fillet_points = translate_points(rotate_points(arc_points(fillet_radius, 90), 180), center);
-    polygon(rotate_points(fillet_points, half_tooth_angle));
-    polygon(mirror_points(rotate_points(fillet_points, half_tooth_angle)));
+    shallow_fillet_radius = (base_radius - sqrt(2*root_radius^2 - base_radius^2))/2;
+
+    fillet_radius = min(deep_fillet_radius, shallow_fillet_radius);
+
+    if (deep_fillet_radius < shallow_fillet_radius) {
+      center = rotate_point(point_on_circle(root_radius + fillet_radius, half_root_angle), half_tooth_angle);
+      start_angle = end_angle - (90 - half_root_angle);
+      fillet_points = arc_points(fillet_radius, start_angle, end_angle, center);
+      half_polygon = concat(fillet_points, [tooth_base, tooth_center]);
+
+      polygon(concat(half_polygon, reverse(mirror_points(half_polygon))));
+
+    } else {
+      center = rotate_point([base_radius, fillet_radius], half_tooth_angle);
+      start_angle = end_angle - 90;
+      fillet_points = arc_points(fillet_radius, start_angle, end_angle, center);
+      half_polygon = concat(fillet_points, [tooth_base, tooth_center]);
+
+      polygon(concat(half_polygon, reverse(mirror_points(half_polygon))));
+    }
   }
 }
 
@@ -129,7 +137,7 @@ function involute_point(r, t) = [inv_x(r, t), inv_y(r, t)];
 
 // Get a series of points representing the involute curve between the two angles
 function involute_points(r, t_start, t_end, step=1) = [for (t = [t_start:step:t_end]) involute_point(r, t)];
-  
+
 // Get the x value for point on the involute curve at the given angle
 function inv_x(r, t) = r*(cos(t) + to_rad(t)*sin(t));
 
@@ -151,6 +159,9 @@ function rotate_points(points, t) = [for (p = points) rotate_point(p, t)];
 // Mirror points across the x axis
 function mirror_points(points) = [for (p = points) [p[0], -p[1]]];
 
+// Translate points
+function translate_points(points, to) = [for (p = points) [p[0] + to[0], p[1] + to[1]]];
+
 // Reverse order of array
 function reverse(elements) = [for (i = [len(elements)-1:-1:0]) elements[i]];
 
@@ -169,35 +180,10 @@ function to_rad(a) = a*PI/180;
 // Degrees to radians
 function distance(p1, p2) = sqrt((p1[0] - p2[0])^2 + (p1[1] - p2[1])^2);
 
-// Get points representing the arc or radius r through the angle t
-function arc_points(r, t) = [for (a = [0:t]) point_on_circle(r, a)];
-  
-// Translate points
-function translate_points(points, to) = [for (p = points) [p[0] + to[0], p[1] + to[1]]];
+// Get points representing the arc
+function arc_points(r, t_start, t_end, center) = translate_points([for (a = [t_start:t_end]) point_on_circle(r, a)], center);
 
 
-// Get the circle with the given radius that passes through the two points
-// Returns the circle with the greater x value
-module circle_through(r, p1, p2) {
-  midpoint = [(p1[0] + p2[0])/2, (p1[1] + p2[1])/2];
-  d = distance(p1, midpoint);
-  dist_to_center = sqrt(r^2 - d^2);
-  slope = (p1[1]-p2[1])/(p1[0]-p2[0]);
-  slope_perp = -1/slope;
-  angle = atan(slope_perp);
-  x = dist_to_center*cos(angle) + midpoint[0];
-  y = dist_to_center*sin(angle) + midpoint[1];
-  
-  translate([x, y, 0]) circle(r);
-}
-
-//arc_points(10, [0, 0], [0, 5]);
-//circle(5);
-
-
-gear(pressure_angle = 20, modul = 2, num_teeth = 8);
-
-
-
-
-
+translate([-6, -10, 0]) gear(pressure_angle = 20, modul = 1, num_teeth = 8);
+translate([14, -15, 0]) gear(pressure_angle = 20, modul = 1, num_teeth = 32);
+translate([0, 25, 0]) gear(pressure_angle = 20, modul = 1, num_teeth = 50);
