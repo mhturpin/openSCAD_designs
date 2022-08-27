@@ -15,6 +15,7 @@ module gear(pressure_angle = 20,
             thickness = 1,
             hole_diameter = 1) {
 
+  // Base gear dimension calculations
   pitch_diameter = num_teeth*modul;
   pitch_radius = pitch_diameter/2;
   base_diameter = pitch_diameter*cos(pressure_angle);
@@ -22,23 +23,23 @@ module gear(pressure_angle = 20,
   root_radius = pitch_radius - (dedendum*modul);
   top_radius = pitch_radius + (addendum*modul);
 
-  for (i = [0:num_teeth-1]) {
-    rotate(360*i/num_teeth) {
-      tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius, pitch_radius);
-    }
-  }
-
+  // Undercut calculations
   // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=42
   rack_chordal_thickness = PI*modul/2;
   distance_rolled = rack_chordal_thickness/2 - addendum*modul*tan(pressure_angle);
   angle_from_centered = to_deg(distance_rolled/pitch_radius);
   angle_offset = 180/num_teeth - angle_from_centered;
 
-  #rotate(angle_offset) undercut_profile(addendum*modul, pitch_radius);
 
-  #translate([0, 0, .5]) ring(root_radius);
-  #translate([0, 0, .5]) ring(base_radius);
-  #translate([0, 0, .5]) ring(pitch_radius);
+  for (i = [0:num_teeth-1]) {
+    rotate(360*i/num_teeth) {
+      difference() {
+        tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius, pitch_radius);
+        rotate(angle_offset) undercut_profile(addendum*modul, pitch_radius);
+        mirror([0, 1, 0]) rotate(angle_offset) undercut_profile(addendum*modul, pitch_radius);
+      }
+    }
+  }
 
   circle(root_radius);
 }
@@ -98,7 +99,7 @@ module tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius, pi
       center = rotate_point(point_on_circle(root_radius + fillet_radius, half_root_angle), half_tooth_angle);
       start_angle = end_angle - (90 - half_root_angle);
       fillet_points = arc_points(fillet_radius, start_angle, end_angle, center);
-      half_polygon = concat(fillet_points, [tooth_base, tooth_center]);
+      half_polygon = concat([[0, 0]], fillet_points, [tooth_base, tooth_center]);
 
       polygon(concat(half_polygon, reverse(mirror_points(half_polygon))));
 
@@ -106,7 +107,7 @@ module tooth(pressure_angle, num_teeth, root_radius, top_radius, base_radius, pi
       center = rotate_point([base_radius, fillet_radius], half_tooth_angle);
       start_angle = end_angle - 90;
       fillet_points = arc_points(fillet_radius, start_angle, end_angle, center);
-      half_polygon = concat(fillet_points, [tooth_base, tooth_center]);
+      half_polygon = concat([[0, 0]], fillet_points, [tooth_base, tooth_center]);
 
       polygon(concat(half_polygon, reverse(mirror_points(half_polygon))));
     }
