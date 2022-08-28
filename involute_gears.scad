@@ -4,16 +4,16 @@ $fn = 200;
 // https://www.tec-science.com/mechanical-power-transmission/involute-gear/calculation-of-involute-gears/
 // https://mathworld.wolfram.com/CircleInvolute.html
 
-module gear(pressure_angle = 20,
-            mod = 1,
-            num_teeth = 32,
-            thickness = 1,
-            hole_diameter = 0,
-            backlash = 0,
-            twist = 0,
-            addendum = 1,
-            dedendum = 1.25) {
-  linear_extrude(height = thickness, twist = twist, convexity = 10) {
+module gear(pressure_angle=20,
+            mod=1,
+            num_teeth=32,
+            thickness=1,
+            hole_diameter=0,
+            backlash=0,
+            twist=0,
+            addendum=1,
+            dedendum=1.25) {
+  linear_extrude(height=thickness, twist=twist, convexity=10) {
     gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum);
   }
 }
@@ -67,7 +67,7 @@ function tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch
     contact_ps = contact_surface_points(base_radius, t_start, t_end, tooth_center_angle),
     fillet_ps = fillet_points(base_radius, root_radius, num_teeth, tooth_center_angle),
     half_tooth_points = concat(fillet_ps, contact_ps),
-    shifted_points = [for (p = half_tooth_points) [p[0] - backlash/2, p[1]]]
+    shifted_points = [for (p = half_tooth_points) [p[0], p[1] - backlash/2]]
   ) concat(shifted_points, reverse(mirror_points(shifted_points)));
 
 // Get the points for the involute section of the tooth
@@ -187,14 +187,14 @@ module ring(radius) {
 module test_gears() {
   // Pitch radius: 8
   // 360 degrees rotation per cycle
-  translate([20, -16, 0]) rotate($t*360 + 22.5) gear(pressure_angle = 20, mod = 1, num_teeth = 8);
+  translate([20, -16, 0]) rotate($t*360 + 22.5) gear(pressure_angle=20, mod=1, num_teeth=8, backlash=0.1);
   // Pitch radius: 16
   // 90 degrees rotation per cycle
-  translate([0, -16, 0]) rotate(-$t*90) gear(pressure_angle = 20, mod = 1, num_teeth = 32);
+  translate([0, -16, 0]) rotate(-$t*90) gear(pressure_angle=20, mod=1, num_teeth=32);
   // Pitch radius: 25
   // 57.6 degrees rotation per cycle
-  translate([0, 25, 0]) rotate($t*57.6) gear(pressure_angle = 20, mod = 1, num_teeth = 50);
+  translate([0, 25, 0]) rotate($t*57.6) gear(pressure_angle=20, mod=1, num_teeth=50);
 }
 
 test_gears();
-// gear(pressure_angle = 20, mod = 1, num_teeth = 15);
+// gear(pressure_angle=20, mod=1, num_teeth=15);
