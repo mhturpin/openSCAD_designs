@@ -7,18 +7,19 @@ $fn = 200;
 module gear(pressure_angle = 20,
             mod = 1,
             num_teeth = 32,
-            addendum = 1,
-            dedendum = 1.25,
-            hole_diameter = 0,
             thickness = 1,
-            twist = 0) {
+            hole_diameter = 0,
+            backlash = 0,
+            twist = 0,
+            addendum = 1,
+            dedendum = 1.25) {
   linear_extrude(height = thickness, twist = twist, convexity = 10) {
-    gear_2d(pressure_angle, mod, num_teeth, addendum, dedendum, hole_diameter);
+    gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum);
   }
 }
 
 // TODO: add profile_shift, backlash, root_fillet_radius
-module gear_2d(pressure_angle, mod, num_teeth, addendum, dedendum, hole_diameter) {
+module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum) {
   // Base gear dimension calculations
   pitch_diameter = num_teeth*mod;
   pitch_radius = pitch_diameter/2;
@@ -34,7 +35,7 @@ module gear_2d(pressure_angle, mod, num_teeth, addendum, dedendum, hole_diameter
   angle_from_centered = to_deg(distance_rolled/pitch_radius);
   angle_offset = 180/num_teeth - angle_from_centered;
 
-  tooth_ps = tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch_radius, top_radius);
+  tooth_ps = tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch_radius, top_radius, backlash);
   // Points are listed from +x to -x, so go clockwise
   gear_points = [for (i = [0:num_teeth-1]) each rotate_points(tooth_ps, -360*i/num_teeth)];
 
@@ -54,7 +55,7 @@ module gear_2d(pressure_angle, mod, num_teeth, addendum, dedendum, hole_diameter
 
 // Get the points for an involute gear tooth
 // Center of tooth on x axis, points above x axis
-function tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch_radius, top_radius) =
+function tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch_radius, top_radius, backlash) =
   let(
     // If base_radius > root_radius, start at base_radius, else start where involute crosses root_radius
     t_start = base_radius > root_radius ? 0 : theta_for_radius(base_radius, root_radius),
@@ -65,8 +66,9 @@ function tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch
     tooth_center_angle = 90/num_teeth + inv(pressure_angle),
     contact_ps = contact_surface_points(base_radius, t_start, t_end, tooth_center_angle),
     fillet_ps = fillet_points(base_radius, root_radius, num_teeth, tooth_center_angle),
-    half_tooth_points = concat(fillet_ps, contact_ps)
-  ) concat(half_tooth_points, reverse(mirror_points(half_tooth_points)));
+    half_tooth_points = concat(fillet_ps, contact_ps),
+    shifted_points = [for (p = half_tooth_points) [p[0] - backlash/2, p[1]]]
+  ) concat(shifted_points, reverse(mirror_points(shifted_points)));
 
 // Get the points for the involute section of the tooth
 // Center of tooth on x axis, points above x axis
@@ -194,5 +196,5 @@ module test_gears() {
   translate([0, 25, 0]) rotate($t*57.6) gear(pressure_angle = 20, mod = 1, num_teeth = 50);
 }
 
-// test_gears();
+test_gears();
 // gear(pressure_angle = 20, mod = 1, num_teeth = 15);
