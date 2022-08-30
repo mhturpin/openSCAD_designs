@@ -5,5 +5,6 @@ $fn = 200;
 
 difference() {
   translate([0, 0, 5]) cube(9, center=true);
-  translate([0, 0, 3.574]) threaded_rod(6.37, 7.15, 1.27);
+  // 1/4 inch, 10 threads/half inch
+  translate([0, 0, 3.574]) threaded_rod(6.75, 7.15, 1.27);
 }
