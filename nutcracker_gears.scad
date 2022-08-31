@@ -27,13 +27,16 @@ module base_piece() {
 module top_piece() {
   difference() {
     union() {
-      // Pitch radius = 34-(147-128) = 15
-      // Pitch diameter = 30
-      // 5/16 inch hole = 7.9375mm
-      translate([0, 0, -thickness/2]) rotate(18) gear(pressure_angle=25, mod=3, num_teeth=10, hole_diameter=7.94, thickness=thickness);
+      intersection() {
+        // Pitch radius = 34-(147-128) = 15
+        // Pitch diameter = 30
+        // 5/16 inch hole = 7.9375mm
+        translate([0, 0, -thickness/2]) gear(pressure_angle=25, mod=3, num_teeth=10, hole_diameter=7.94, thickness=thickness);
+        top_gear_mask();
+      }
 
       // 1/2 inch rod = 12.7mm, 2mm boundry = 16.7mm square
-      translate([0, 8, 0]) rotate([-90, 0, 0]) trapezoid([17.5, thickness], [16.7, 16.7], 30);
+      translate([0, 7, 0]) rotate([-90, 0, 0]) trapezoid([17.5, thickness], [16.7, 16.7], 30);
     }
     translate([0, 38.2, 0]) rotate([90, 0, 0]) cylinder(30.2, 6.45, 6.45);
   }
@@ -78,15 +81,46 @@ module base_gear_mask(width, height, inner_width, inner_height, thickness) {
 
 module top_gear_mask() {
   root_radius = 3*10/2 - 1.25*3;
-  echo(root_radius);
+  outer_radius = 3*10/2 + 3 + 1; // add a little extra for difference
   cylinder(thickness+1, root_radius, root_radius, center=true);
+  // remove 6 teeth 1 tooth = 360/10 = 36 degrees
+  rotate(-54) part_cylinder(outer_radius, 36*6, thickness+1);
+}
+
+module part_cylinder(r, angle, height) {
+  
+  rotate(floor(angle/90)*90) difference() {
+    cylinder(height, r, r, center=true);
+    
+    translate([0, 0, -height/2-1]) union() {
+      points = [
+        [0, 0, 0],
+        [2*r, 0, 0],
+        [2*r*cos(angle%90), 2*r*sin(angle%90), 0],
+        [0, 0, height+2],
+        [2*r, 0, height+2],
+        [2*r*cos(angle%90), 2*r*sin(angle%90), height+2]];
+      faces = [
+        [0,1,2],
+        [0, 3, 4, 1],
+        [1, 4, 5, 2],
+        [0, 2, 5, 3],
+        [3, 4, 5]];
+      
+      polyhedron(points, faces, convexity=2);
+      
+      for (i = [1:angle/90]) {
+        translate([(i > 1 ? -1 : 0)*(height+2), (i < 3 ? -1 : 0)*(height+2), 0]) cube(height+2);
+      }
+    }
+  }
 }
 
 //base_piece();
 //translate([0, 34, 0])
-top_piece();
-top_gear_mask();
-//washer();
+//top_piece();
+//top_gear_mask();
+washer();
 
 
 
