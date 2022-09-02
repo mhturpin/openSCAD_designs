@@ -31,7 +31,7 @@ module top_piece() {
         // Pitch radius = 34-(147-128) = 15
         // Pitch diameter = 30
         // 5/16 inch hole = 7.9375mm
-        translate([0, 0, -thickness/2]) gear(pressure_angle=25, mod=3, num_teeth=10, hole_diameter=7.94, thickness=thickness);
+        translate([0, 0, -thickness/2]) gear(pressure_angle=25, mod=3, num_teeth=10, hole_diameter=8, thickness=thickness);
         top_gear_mask();
       }
 
@@ -40,14 +40,43 @@ module top_piece() {
     }
     translate([0, 38.2, 0]) rotate([90, 0, 0]) cylinder(30.2, 6.45, 6.45);
   }
+  
+  translate([0, 0, thickness/2]) washer();
+  mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer();
 }
 
 module washer() {
   // 1 3/16 inch between arms
   // 5/16 inch hole = 7.9375mm
+  // distance to tab (half arm width) = 9.6
+  h = 2.6;
+  r = 6;
+  d = 9.6;
+
   difference() {
-    cylinder(2.6, 8, 8, center=true);
-    cylinder(2.8, 4, 4, center=true);
+    cylinder(h, r, r);
+    translate([0, 0, -0.1]) cylinder(h + 0.2, 4, 4);
+  }
+
+  root_radius = 3*10/2 - 1.25*3;
+  // Tab to catch handle and allow pulling jaws open
+  translate([0, d, h]) cube([r, h, h]);
+
+  a = 90 - acos(6/(d+h));
+  x = -r*cos(a);
+  y = r*sin(a);
+
+  points = [
+    [r, 0],
+    [r, d+h],
+    [0, d+h],
+    [x, y],
+    [0, r]
+  ];
+
+  // Add extra depth so there aren't gaps
+  translate([0, 0, -h]) linear_extrude(2*h) {
+    polygon(points);
   }
 }
 
@@ -88,10 +117,9 @@ module top_gear_mask() {
 }
 
 module part_cylinder(r, angle, height) {
-  
   rotate(floor(angle/90)*90) difference() {
     cylinder(height, r, r, center=true);
-    
+
     translate([0, 0, -height/2-1]) union() {
       points = [
         [0, 0, 0],
@@ -106,9 +134,9 @@ module part_cylinder(r, angle, height) {
         [1, 4, 5, 2],
         [0, 2, 5, 3],
         [3, 4, 5]];
-      
+
       polyhedron(points, faces, convexity=2);
-      
+
       for (i = [1:angle/90]) {
         translate([(i > 1 ? -1 : 0)*(height+2), (i < 3 ? -1 : 0)*(height+2), 0]) cube(height+2);
       }
@@ -118,9 +146,6 @@ module part_cylinder(r, angle, height) {
 
 //base_piece();
 //translate([0, 34, 0])
-//top_piece();
-//top_gear_mask();
-washer();
-
+top_piece();
 
 
