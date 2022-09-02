@@ -3,9 +3,9 @@ include <../libraries/BOSL2/threading.scad>
 use <involute_gears.scad>
 
 $fn = $preview ? 100 : 200;
-//$vpd = 200;
-//$vpr = [0, 0, 0];
-//$vpt = [0, 40, 0];
+$vpd = 400;
+$vpr = [0, 0, 0];
+$vpt = [0, 40, 0];
 
 thickness = 25;
 
@@ -16,11 +16,18 @@ module base_piece() {
     // Move so cut bottom is on the x axis
     translate([0, -128, 0]) gear(pressure_angle=25, mod=3, num_teeth=98, thickness=thickness, backlash=0.2);
     translate([0, 17, thickness/2]) base_gear_mask(300, 600, 119, 34, thickness + 0.1);
+
     // Add threaded holes
     // Holes on nutcracker base 1mm off (one side 10mm, other 11mm)
     // 1/4 inch, 10 threads/half inch, 0.2mm clearance
-    translate([32.5, 3.574, 12]) rotate([90, 0, 0]) threaded_rod(6.75, 7.15, 1.27);
-    translate([-32.5, 3.574, 12]) rotate([90, 0, 0]) threaded_rod(6.75, 7.15, 1.27);
+    // back - 31/32 from end = 24.61
+    // front - 38/32 from end = 30.16
+    // 4.75 long = 120.65mm
+    x1 = 120.65/2 - 24.61;
+    x2 = 120.65/2 - 30.16;
+
+    translate([x1, 3.574, 12]) rotate([90, 0, 0]) threaded_rod(6.75, 7.15, 1.27);
+    translate([-x2, 3.574, 12]) rotate([90, 0, 0]) threaded_rod(6.75, 7.15, 1.27);
   }
 }
 
@@ -144,8 +151,8 @@ module part_cylinder(r, angle, height) {
   }
 }
 
-//base_piece();
-//translate([0, 34, 0])
-top_piece();
+
+base_piece();
+//top_piece();
 
 
