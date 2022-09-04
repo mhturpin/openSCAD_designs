@@ -8,14 +8,16 @@ $vpr = [0, 0, 0];
 $vpt = [0, 40, 0];
 
 thickness = 25;
+teeth_1 = 8;
+teeth_2 = 108 - teeth_1;
 
 module base_piece() {
   difference() {
     // Pitch diameter = 3*98 = 294
     // Pitch radius = 147
     // Move so cut bottom is on the x axis
-    translate([0, -128, 0]) gear(pressure_angle=25, mod=3, num_teeth=98, thickness=thickness, backlash=0.2);
-    translate([0, 17, thickness/2]) base_gear_mask(300, 600, 119, 34, thickness + 0.1);
+    translate([0, -128, 0]) gear(pressure_angle=28, mod=3, num_teeth=teeth_2, thickness=thickness, backlash=0.2);
+    translate([0, 17, thickness/2]) base_gear_mask(3*teeth_2+100, 600, 119, 34, thickness + 0.1);
 
     // Add threaded holes
     // Holes on nutcracker base 1mm off (one side 10mm, other 11mm)
@@ -32,24 +34,28 @@ module base_piece() {
 }
 
 module top_piece() {
+  root_radius = 3*teeth_1/2 - 1.25*3;
+
   difference() {
     union() {
       intersection() {
         // Pitch radius = 34-(147-128) = 15
         // Pitch diameter = 30
         // 5/16 inch hole = 7.9375mm
-        translate([0, 0, -thickness/2]) gear(pressure_angle=25, mod=3, num_teeth=10, hole_diameter=8, thickness=thickness);
+        translate([0, 0, -thickness/2]) rotate(22.5) gear(pressure_angle=28, mod=3, num_teeth=teeth_1, thickness=thickness);
         top_gear_mask();
       }
 
       // 1/2 inch rod = 12.7mm, 2mm boundry = 16.7mm square
-      translate([0, 7, 0]) rotate([-90, 0, 0]) trapezoid([17.5, thickness], [16.7, 16.7], 30);
+      translate([0, root_radius, 0]) rotate([-90, 0, 0]) trapezoid([16.5, thickness], [16.5, 16.5], 30);
+      translate([0, root_radius/2, 0]) cube([16.5, root_radius, thickness], center=true);
     }
-    translate([0, 38.2, 0]) rotate([90, 0, 0]) cylinder(30.2, 6.45, 6.45);
+    cylinder(thickness+1, 4, 4, center=true); // Center hole
+    translate([0, root_radius, 0]) rotate([-90, 0, 0]) cylinder(30.2, 6.45, 6.45); // Hole for handle
   }
-  
+
   translate([0, 0, thickness/2]) washer();
-  mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer();
+  //mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer();
 }
 
 module washer() {
@@ -73,7 +79,7 @@ module washer() {
   x = -r*cos(a);
   y = r*sin(a);
 
-  points = [
+  connector_points = [
     [r, 0],
     [r, d+h],
     [0, d+h],
@@ -83,8 +89,25 @@ module washer() {
 
   // Add extra depth so there aren't gaps
   translate([0, 0, -h]) linear_extrude(2*h) {
-    polygon(points);
+    polygon(connector_points);
   }
+
+  wedge_points = [
+    [0, d+h, -h],
+    [r, d+h, -h],
+    [r, d+4*h, -h],
+    [0, d+4*h, -h],
+    [0, d+h, 2*h],
+    [r, d+h, 2*h]
+  ];
+  faces = [
+  [0, 1, 2, 3],
+  [0, 4, 5, 1],
+  [1, 5, 2],
+  [5, 4, 3, 2],
+  [0, 3, 4]
+  ];
+  polyhedron(wedge_points, faces);
 }
 
 module trapezoid(base, top, height) {
@@ -116,11 +139,11 @@ module base_gear_mask(width, height, inner_width, inner_height, thickness) {
 }
 
 module top_gear_mask() {
-  root_radius = 3*10/2 - 1.25*3;
-  outer_radius = 3*10/2 + 3 + 1; // add a little extra for difference
+  root_radius = 3*teeth_1/2 - 1.25*3;
+  outer_radius = 3*teeth_1/2 + 3 + 1; // add a little extra for difference
   cylinder(thickness+1, root_radius, root_radius, center=true);
-  // remove 6 teeth 1 tooth = 360/10 = 36 degrees
-  rotate(-54) part_cylinder(outer_radius, 36*6, thickness+1);
+  // remove teeth, 1 tooth = 360/8 = 45 degrees
+  rotate(-45) part_cylinder(outer_radius, 4*360/teeth_1, thickness+1);
 }
 
 module part_cylinder(r, angle, height) {
@@ -153,6 +176,4 @@ module part_cylinder(r, angle, height) {
 
 
 base_piece();
-//top_piece();
-
-
+translate([0, 34, thickness/2]) top_piece();
