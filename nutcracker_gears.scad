@@ -10,14 +10,17 @@ $vpt = [0, 40, 0];
 thickness = 25;
 teeth_1 = 8;
 teeth_2 = 108 - teeth_1;
+root_radius = 3*teeth_1/2 - 1.25*3;
 
 module base_piece() {
   difference() {
-    // Pitch diameter = 3*98 = 294
-    // Pitch radius = 147
-    // Move so cut bottom is on the x axis
-    translate([0, -128, 0]) gear(pressure_angle=28, mod=3, num_teeth=teeth_2, thickness=thickness, backlash=0.2);
-    translate([0, 17, thickness/2]) base_gear_mask(3*teeth_2+100, 600, 119, 34, thickness + 0.1);
+    intersection() {
+      // Pitch diameter = 3*98 = 294
+      // Pitch radius = 147
+      // Move so cut bottom is on the x axis
+      translate([0, -128, 0]) gear(pressure_angle=28, mod=3, num_teeth=teeth_2, thickness=thickness, backlash=0.2);
+      translate([-119/2, 0, 0]) cube([119, 34, thickness]);
+    }
 
     // Add threaded holes
     // Holes on nutcracker base 1mm off (one side 10mm, other 11mm)
@@ -34,8 +37,6 @@ module base_piece() {
 }
 
 module top_piece() {
-  root_radius = 3*teeth_1/2 - 1.25*3;
-
   difference() {
     union() {
       intersection() {
@@ -46,59 +47,70 @@ module top_piece() {
         top_gear_mask();
       }
 
-      // 1/2 inch rod = 12.7mm, 2mm boundry = 16.7mm square
-      translate([0, root_radius, 0]) rotate([-90, 0, 0]) trapezoid([16.5, thickness], [16.5, 16.5], 30);
+      translate([0, root_radius, 0]) rotate([-90, 0, 0]) hull() {
+        cube([16.5, thickness, 0.001], center=true);
+        translate ([0, 0, 30]) linear_extrude (0.001) circle (8.25);
+      }
+
       translate([0, root_radius/2, 0]) cube([16.5, root_radius, thickness], center=true);
+      translate([0, 0, thickness/2]) washer_shape();
+      //mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer_shape();
     }
-    cylinder(thickness+1, 4, 4, center=true); // Center hole
-    translate([0, root_radius, 0]) rotate([-90, 0, 0]) cylinder(30.2, 6.45, 6.45); // Hole for handle
+
+    cylinder(thickness+10, 4, 4, center=true); // Gear center hole
+    translate([0, root_radius, 0]) rotate([-90, 0, 0]) handle_connector(); // Hole for handle
   }
 
-  translate([0, 0, thickness/2]) washer();
-  //mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer();
 }
 
-module washer() {
+module handle_connector() {
+  //cylinder(30.2, 6.75, 6.75);
+  linear_extrude(30.2) hexagon(4.1);
+}
+
+module washer_shape() {
   // 1 3/16 inch between arms
   // 5/16 inch hole = 7.9375mm
   // distance to tab (half arm width) = 9.6
-  h = 2.6;
-  r = 6;
-  d = 9.6;
+  height = 2.6; // Height of washer
+  r = 6; // Outer radius of washer
+  d = 9.6; // Distance from center of hole to edge of arm
+  half_gear = thickness/2;
 
-  difference() {
-    cylinder(h, r, r);
-    translate([0, 0, -0.1]) cylinder(h + 0.2, 4, 4);
-  }
+  cylinder(height, r, r);
 
-  root_radius = 3*10/2 - 1.25*3;
-  // Tab to catch handle and allow pulling jaws open
-  translate([0, d, h]) cube([r, h, h]);
-
-  a = 90 - acos(6/(d+h));
-  x = -r*cos(a);
-  y = r*sin(a);
+  // Connection between circle and tab
+  a1 = 90 - acos(r/d);
+  x1 = -r*cos(a1);
+  y1 = r*sin(a1);
+  
+  corner_d = sqrt(root_radius^2 + d^2);
+  a2 = acos(r/corner_d) - atan(d/root_radius);
+  x2 = r*cos(a2);
+  y2 = -r*sin(a2);
 
   connector_points = [
-    [r, 0],
-    [r, d+h],
-    [0, d+h],
-    [x, y],
-    [0, r]
+    [x2, y2],
+    [root_radius, d],
+    [0, d],
+    [x1, y1]
   ];
 
-  // Add extra depth so there aren't gaps
-  translate([0, 0, -h]) linear_extrude(2*h) {
+  translate([0, 0, -half_gear]) linear_extrude(height+half_gear) {
     polygon(connector_points);
   }
 
+  // Tab to catch handle and allow pulling jaws open
+  translate([0, d, -half_gear]) cube([root_radius, height, 2*height+half_gear]);
+
+  // Tab support wedge
   wedge_points = [
-    [0, d+h, -h],
-    [r, d+h, -h],
-    [r, d+4*h, -h],
-    [0, d+4*h, -h],
-    [0, d+h, 2*h],
-    [r, d+h, 2*h]
+    [0, d+height, -half_gear],
+    [root_radius, d+height, -half_gear],
+    [root_radius, d+3*height+half_gear, -half_gear],
+    [0, d+3*height+half_gear, -half_gear],
+    [0, d+height, 2*height],
+    [root_radius, d+height, 2*height]
   ];
   faces = [
   [0, 1, 2, 3],
@@ -110,36 +122,7 @@ module washer() {
   polyhedron(wedge_points, faces);
 }
 
-module trapezoid(base, top, height) {
-  points = [
-    [base[0]/2, base[1]/2, 0],
-    [base[0]/2, -base[1]/2, 0],
-    [-base[0]/2, -base[1]/2, 0],
-    [-base[0]/2, base[1]/2, 0],
-    [top[0]/2, top[1]/2, height],
-    [top[0]/2, -top[1]/2, height],
-    [-top[0]/2, -top[1]/2, height],
-    [-top[0]/2, top[1]/2, height]];
-  faces = [
-    [0,1,2,3],
-    [4,5,1,0],
-    [7,6,5,4],
-    [5,6,2,1],
-    [6,7,3,2],
-    [7,4,0,3]];
-
-  polyhedron(points, faces, convexity=2);
-}
-
-module base_gear_mask(width, height, inner_width, inner_height, thickness) {
-  difference() {
-    cube([width, height, thickness], center=true);
-    cube([inner_width, inner_height, thickness+.1], center=true);
-  }
-}
-
 module top_gear_mask() {
-  root_radius = 3*teeth_1/2 - 1.25*3;
   outer_radius = 3*teeth_1/2 + 3 + 1; // add a little extra for difference
   cylinder(thickness+1, root_radius, root_radius, center=true);
   // remove teeth, 1 tooth = 360/8 = 45 degrees
@@ -174,6 +157,15 @@ module part_cylinder(r, angle, height) {
   }
 }
 
+module hexagon(width) {
+  x = width/2/sqrt(3);
+  y = width/2;
+  polygon([[x, y], [2*x, 0], [x, -y], [-x, -y], [-2*x, 0], [-x, y]]);
+}
 
-base_piece();
-translate([0, 34, thickness/2]) top_piece();
+
+//base_piece();
+//translate([0, 34, thickness/2]) top_piece();
+top_piece();
+//washer_shape();
+
