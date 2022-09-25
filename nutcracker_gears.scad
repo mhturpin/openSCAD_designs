@@ -2,37 +2,55 @@ include <../libraries/BOSL2/std.scad>
 include <../libraries/BOSL2/threading.scad>
 use <involute_gears.scad>
 
-$fn = $preview ? 100 : 200;
-$vpd = 400;
-$vpr = [0, 0, 0];
-$vpt = [0, 40, 0];
+$fn = $preview ? 10 : 200;
+//$vpd = 400;
+//$vpr = [0, 0, 0];
+//$vpt = [0, 40, 0];
 
+// Parameters
 thickness = 25;
-teeth_1 = 8;
-teeth_2 = 108 - teeth_1;
-root_radius = 3*teeth_1/2 - 1.25*3;
+top_teeth = 8;
+pressure_angle = 28;
+mod = 3;
+base_height = 128; // From the center of the bottom pivot to the flat where the base gear section sits
+arm_radius = 162; // From the center of the bottom pivot to the center of the top pivot
+top_bolt_diameter = (5/16)*25.4;
+flat_length = 120.4; // Length of the flat part that the base gear is bolted to
+flat_width = 27.75; // Width of the flat part that the base gear is bolted to
+base_length = 119; // The length of the base gear
+bolt_clearance = 0.2;
+base_bolt_diameter = (1/4)*25.4;
+base_bolt_depth = 8; // Depth of the hole in the base gear
+base_bolt_mm_per_thread = 25.4/20; // 20 threads per inch
+// With the jaws on the left
+back_hole_1_x = 33.6; // Distance from the left edge of the flat to the back of first hole
+back_hole_2_x = 98.5; // Distance from the left edge of the flat to the back of second hole
+hole_1_center_y = 14.34; // Distance from the edge closest to you to the center of the first hole
+hole_2_center_y = 14.16; // Distance from the edge closest to you to the center of the second hole
+
+// Calculated variables
+base_teeth = 2*arm_radius/mod - top_teeth;
+root_radius = 3*top_teeth/2 - 1.25*3;
+
 
 module base_piece() {
   difference() {
     intersection() {
-      // Pitch diameter = 3*98 = 294
-      // Pitch radius = 147
       // Move so cut bottom is on the x axis
-      translate([0, -128, 0]) gear(pressure_angle=28, mod=3, num_teeth=teeth_2, thickness=thickness, backlash=0.2);
-      translate([-119/2, 0, 0]) cube([119, 34, thickness]);
+      translate([0, -base_height, 0]) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=base_teeth, thickness=thickness, backlash=0.2);
+      translate([-base_length/2, 0, 0]) cube([base_length, arm_radius-base_height, thickness]);
     }
 
     // Add threaded holes
-    // Holes on nutcracker base 1mm off (one side 10mm, other 11mm)
-    // 1/4 inch, 10 threads/half inch, 0.2mm clearance
-    // back - 31/32 from end = 24.61
-    // front - 38/32 from end = 30.16
-    // 4.75 long = 120.65mm
-    x1 = 120.65/2 - 24.61;
-    x2 = 120.65/2 - 30.16;
+    x1 = flat_length/2 - back_hole_1_x + base_bolt_diameter/2;
+    x2 = back_hole_2_x - flat_length/2 - base_bolt_diameter/2;
+    y = base_bolt_depth/2 - 0.001;
+    z1 = flat_width - hole_1_center_y - (flat_width - thickness)/2;
+    z2 = flat_width - hole_2_center_y - (flat_width - thickness)/2;
 
-    translate([x1, 3.574, 12]) rotate([90, 0, 0]) threaded_rod(6.75, 7.15, 1.27);
-    translate([-x2, 3.574, 12]) rotate([90, 0, 0]) threaded_rod(6.75, 7.15, 1.27);
+    d = base_bolt_diameter+2*bolt_clearance;
+    translate([-x1, y, z1]) rotate([90, 0, 0]) threaded_rod(d, base_bolt_depth, base_bolt_mm_per_thread);
+    translate([x2, y, z2]) rotate([90, 0, 0]) threaded_rod(d, base_bolt_depth, base_bolt_mm_per_thread);
   }
 }
 
@@ -40,32 +58,33 @@ module top_piece() {
   difference() {
     union() {
       intersection() {
-        // Pitch radius = 34-(147-128) = 15
-        // Pitch diameter = 30
-        // 5/16 inch hole = 7.9375mm
-        translate([0, 0, -thickness/2]) rotate(22.5) gear(pressure_angle=28, mod=3, num_teeth=teeth_1, thickness=thickness);
+        translate([0, 0, -thickness/2]) rotate(22.5) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=top_teeth, thickness=thickness);
         top_gear_mask();
       }
 
       translate([0, root_radius, 0]) rotate([-90, 0, 0]) hull() {
-        cube([16.5, thickness, 0.001], center=true);
-        translate ([0, 0, 30]) linear_extrude (0.001) circle (8.25);
+        cube([root_radius*2, thickness, 0.001], center=true);
+        translate ([0, 0, 30]) linear_extrude (0.001) circle (root_radius);
       }
-
-      translate([0, root_radius/2, 0]) cube([16.5, root_radius, thickness], center=true);
+  
+      // Connect gear to tapered section
+      translate([0, root_radius/2, 0]) cube([root_radius*2, root_radius, thickness], center=true);
       translate([0, 0, thickness/2]) washer_shape();
-      //mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer_shape();
+      // mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer_shape();
     }
 
-    cylinder(thickness+10, 4, 4, center=true); // Gear center hole
-    translate([0, root_radius, 0]) rotate([-90, 0, 0]) handle_connector(); // Hole for handle
+    // Gear center hole
+    cylinder(thickness+10, 4, 4, center=true);
+    // Hole for handle
+    translate([0, root_radius, 0]) rotate([-90, 0, 0]) handle_connector();
   }
 
 }
 
 module handle_connector() {
-  //cylinder(30.2, 6.75, 6.75);
-  linear_extrude(30.2) hexagon(4.1);
+  // 1/4 20 threaded rod
+  // Outer diameter, length, thread width (length/# threads)
+  translate([0, 0, 15.1]) threaded_rod(6.75, 30.2, 1.27);
 }
 
 module washer_shape() {
@@ -123,10 +142,11 @@ module washer_shape() {
 }
 
 module top_gear_mask() {
-  outer_radius = 3*teeth_1/2 + 3 + 1; // add a little extra for difference
+  // Add a little extra so surfaces don't touch and cause difference to render weird
+  outer_radius = 3*top_teeth/2 + 3 + 1;
   cylinder(thickness+1, root_radius, root_radius, center=true);
-  // remove teeth, 1 tooth = 360/8 = 45 degrees
-  rotate(-45) part_cylinder(outer_radius, 4*360/teeth_1, thickness+1);
+  // Remove extra teeth
+  rotate(-360/top_teeth) part_cylinder(outer_radius, 4*360/top_teeth, thickness+1);
 }
 
 module part_cylinder(r, angle, height) {
@@ -165,7 +185,8 @@ module hexagon(width) {
 
 
 //base_piece();
-//translate([0, 34, thickness/2]) top_piece();
+//translate([0, arm_radius-base_height, thickness/2]) top_piece();
 top_piece();
 //washer_shape();
+// Washer use params
 
