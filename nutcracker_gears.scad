@@ -3,9 +3,9 @@ include <../libraries/BOSL2/threading.scad>
 use <involute_gears.scad>
 
 $fn = $preview ? 10 : 200;
-//$vpd = 400;
-//$vpr = [0, 0, 0];
-//$vpt = [0, 40, 0];
+$vpd = 400;
+$vpr = [0, 0, 0];
+$vpt = [0, 40, 0];
 
 // Parameters
 thickness = 25;
@@ -27,10 +27,16 @@ back_hole_1_x = 33.6; // Distance from the left edge of the flat to the back of 
 back_hole_2_x = 98.5; // Distance from the left edge of the flat to the back of second hole
 hole_1_center_y = 14.34; // Distance from the edge closest to you to the center of the first hole
 hole_2_center_y = 14.16; // Distance from the edge closest to you to the center of the second hole
+distance_between_arms = 32;
+arm_width = 19.5;
 
 // Calculated variables
 base_teeth = 2*arm_radius/mod - top_teeth;
 root_radius = 3*top_teeth/2 - 1.25*3;
+washer_thickness = (distance_between_arms - thickness)/2;
+washer_radius = top_bolt_diameter/2 + 2;
+half_arm = arm_width/2;
+half_gear = thickness/2;
 
 
 module base_piece() {
@@ -88,48 +94,40 @@ module handle_connector() {
 }
 
 module washer_shape() {
-  // 1 3/16 inch between arms
-  // 5/16 inch hole = 7.9375mm
-  // distance to tab (half arm width) = 9.6
-  height = 2.6; // Height of washer
-  r = 6; // Outer radius of washer
-  d = 9.6; // Distance from center of hole to edge of arm
-  half_gear = thickness/2;
-
-  cylinder(height, r, r);
+  cylinder(washer_thickness, washer_radius, washer_radius);
 
   // Connection between circle and tab
-  a1 = 90 - acos(r/d);
-  x1 = -r*cos(a1);
-  y1 = r*sin(a1);
+  a1 = 90 - acos(washer_radius/half_arm);
+  x1 = -washer_radius*cos(a1);
+  y1 = washer_radius*sin(a1);
   
-  corner_d = sqrt(root_radius^2 + d^2);
-  a2 = acos(r/corner_d) - atan(d/root_radius);
-  x2 = r*cos(a2);
-  y2 = -r*sin(a2);
+  corner_d = sqrt(root_radius^2 + half_arm^2);
+  a2 = acos(washer_radius/corner_d) - atan(half_arm/root_radius);
+  x2 = washer_radius*cos(a2);
+  y2 = -washer_radius*sin(a2);
 
   connector_points = [
     [x2, y2],
-    [root_radius, d],
-    [0, d],
+    [root_radius, half_arm],
+    [0, half_arm],
     [x1, y1]
   ];
 
-  translate([0, 0, -half_gear]) linear_extrude(height+half_gear) {
+  translate([0, 0, -half_gear]) linear_extrude(washer_thickness+half_gear) {
     polygon(connector_points);
   }
 
   // Tab to catch handle and allow pulling jaws open
-  translate([0, d, -half_gear]) cube([root_radius, height, 2*height+half_gear]);
+  translate([0, half_arm, -half_gear]) cube([root_radius, washer_thickness, 2*washer_thickness+half_gear]);
 
   // Tab support wedge
   wedge_points = [
-    [0, d+height, -half_gear],
-    [root_radius, d+height, -half_gear],
-    [root_radius, d+3*height+half_gear, -half_gear],
-    [0, d+3*height+half_gear, -half_gear],
-    [0, d+height, 2*height],
-    [root_radius, d+height, 2*height]
+    [0, half_arm+washer_thickness, -half_gear],
+    [root_radius, half_arm+washer_thickness, -half_gear],
+    [root_radius, half_arm+3*washer_thickness+half_gear, -half_gear],
+    [0, half_arm+3*washer_thickness+half_gear, -half_gear],
+    [0, half_arm+washer_thickness, 2*washer_thickness],
+    [root_radius, half_arm+washer_thickness, 2*washer_thickness]
   ];
   faces = [
   [0, 1, 2, 3],
@@ -184,9 +182,6 @@ module hexagon(width) {
 }
 
 
-//base_piece();
-//translate([0, arm_radius-base_height, thickness/2]) top_piece();
-top_piece();
-//washer_shape();
-// Washer use params
-
+base_piece();
+translate([0, arm_radius-base_height, thickness/2]) top_piece();
+// top_piece();
