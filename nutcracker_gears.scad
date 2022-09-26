@@ -64,7 +64,7 @@ module top_piece() {
   difference() {
     union() {
       intersection() {
-        translate([0, 0, -thickness/2]) rotate(22.5) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=top_teeth, thickness=thickness);
+        translate([0, 0, -thickness/2]) rotate(180/top_teeth) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=top_teeth, thickness=thickness);
         top_gear_mask();
       }
 
@@ -76,7 +76,7 @@ module top_piece() {
       // Connect gear to tapered section
       translate([0, root_radius/2, 0]) cube([root_radius*2, root_radius, thickness], center=true);
       translate([0, 0, thickness/2]) washer_shape();
-      // mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer_shape();
+      mirror([0, 0, 1]) translate([0, 0, thickness/2]) washer_shape();
     }
 
     // Gear center hole
@@ -184,4 +184,3 @@ module hexagon(width) {
 
 base_piece();
 translate([0, arm_radius-base_height, thickness/2]) top_piece();
-// top_piece();
