@@ -1,25 +1,26 @@
 include <../libraries/BOSL2/std.scad>
 include <../libraries/BOSL2/bottlecaps.scad>
+include <../libraries/BOSL2/threading.scad>
 
 $fn = $preview ? 50 : 200;
 
 spout_angle = 60;
 spout_height = 20;
 spout_length = 15.25/sin(spout_angle);
-spout_inner_r = 0.5;
-spout_outer_r = 2.5;
-
-module bump() {
-  translate([outer_r-0.01, 0, height/2]) rotate(45) cube([0.5, 0.5, height], center=true);
-}
+spout_inner_r = 1;
+spout_outer_r = 4;
 
 module cap() {
   difference() {
-    rotate([180, 0, 0]) pco1810_cap(texture="ribbed");
-    cylinder(5, spout_inner_r, spout_inner_r, center=true);
-  }
+    union() {
+      pco1810_cap(texture="ribbed");
+      translate([0, 0, -8]) cylinder(8, 6, 16);
+    }
 
-  spout();
+    translate([0, 0, -10]) cylinder(15, 5, 5);
+  }
+  
+  translate([0, 0, -3]) threaded_nut(10, 8.3, 10, 1);
 }
 
 module tube_corner(radius, angle) {
@@ -43,10 +44,11 @@ module spout() {
       y1 = spout_height - spout_length*cos(spout_angle);
       translate([x1, 0, y1]) rotate([0, -spout_angle, 0]) cylinder(spout_length, spout_outer_r, spout_outer_r);
       translate([0, 0, spout_height]) tube_corner(spout_outer_r, spout_angle);
+      translate([0, 0, -5]) threaded_rod(8, 10, 1);
     }
 
     // Inner section
-    translate([0, 0, -0.001]) cylinder(spout_height, spout_inner_r, spout_inner_r);
+    translate([0, 0, -10.001]) cylinder(spout_height+10, spout_inner_r, spout_inner_r);
     x2 = spout_length*sin(spout_angle);
     y2 = spout_height - spout_length*cos(spout_angle);
     translate([x2, 0, y2]) rotate([0, -spout_angle, 0]) translate([0, 0, -0.001]) cylinder(spout_length, spout_inner_r, spout_inner_r);
@@ -56,3 +58,5 @@ module spout() {
 
 
 cap();
+//spout();
+
