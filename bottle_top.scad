@@ -20,7 +20,8 @@ module cap() {
     translate([0, 0, -10]) cylinder(15, 5, 5);
   }
   
-  translate([0, 0, -3]) threaded_nut(10, 8.3, 10, 1);
+  // od, id, h, pitch (5/16-18 bolt)
+  translate([0, 0, -3]) threaded_nut(10, 8.3, 10, 1.41);
 }
 
 module tube_corner(radius, angle) {
@@ -44,7 +45,8 @@ module spout() {
       y1 = spout_height - spout_length*cos(spout_angle);
       translate([x1, 0, y1]) rotate([0, -spout_angle, 0]) cylinder(spout_length, spout_outer_r, spout_outer_r);
       translate([0, 0, spout_height]) tube_corner(spout_outer_r, spout_angle);
-      translate([0, 0, -5]) threaded_rod(8, 10, 1);
+      // d, l, pitch (5/16-18 bolt)
+      translate([0, 0, -5]) threaded_rod(7.94, 10, 1.41);
     }
 
     // Inner section
@@ -58,5 +60,5 @@ module spout() {
 
 
 cap();
-//spout();
+translate([25, 0, 0]) spout();
 
