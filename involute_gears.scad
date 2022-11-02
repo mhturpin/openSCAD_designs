@@ -10,12 +10,58 @@ module gear(pressure_angle=20,
             thickness=1,
             hole_diameter=0,
             backlash=0,
-            twist=0,
             addendum=1,
             dedendum=1.25) {
+  linear_extrude(height=thickness, convexity=10) {
+    gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum);
+  }
+}
+
+module helical_gear(pressure_angle=20,
+                    helix_angle=30,
+                    direction="right",
+                    mod=1,
+                    num_teeth=32,
+                    thickness=1,
+                    hole_diameter=0,
+                    backlash=0,
+                    addendum=1,
+                    dedendum=1.25) {
+  dir = direction == "left" ? 1 : -1;
+  twist = dir*tan(helix_angle)*thickness*360/(num_teeth*mod*PI);
+
   linear_extrude(height=thickness, twist=twist, convexity=10) {
     gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum);
   }
+}
+
+module herringbone_gear(pressure_angle=20,
+                    helix_angle=30,
+                    mod=1,
+                    num_teeth=32,
+                    thickness=1,
+                    hole_diameter=0,
+                    backlash=0,
+                    addendum=1,
+                    dedendum=1.25) {
+  helical_gear(pressure_angle=pressure_angle,
+               helix_angle=helix_angle,
+               mod=mod,
+               num_teeth=num_teeth,
+               thickness=thickness/2,
+               hole_diameter=hole_diameter,
+               backlash=backlash,
+               addendum=addendum,
+               dedendum=dedendum);
+  mirror([0, 0, 1]) helical_gear(pressure_angle=pressure_angle,
+               helix_angle=helix_angle,
+               mod=mod,
+               num_teeth=num_teeth,
+               thickness=thickness/2,
+               hole_diameter=hole_diameter,
+               backlash=backlash,
+               addendum=addendum,
+               dedendum=dedendum);
 }
 
 // TODO: add profile_shift, backlash, root_fillet_radius
