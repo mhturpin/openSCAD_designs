@@ -1,4 +1,5 @@
-$fn = 200;
+$fn = $preview ? 10 : 200;
+step = $preview ? 45 : 5;
 
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf
 // https://www.tec-science.com/mechanical-power-transmission/involute-gear/calculation-of-involute-gears/
@@ -43,7 +44,10 @@ module herringbone_gear(pressure_angle=20,
                     hole_diameter=0,
                     backlash=0,
                     addendum=1,
-                    dedendum=1.25) {
+                    dedendum=1.25,
+                    reverse=false) {
+  direction = reverse ? "left" : "right";
+
   helical_gear(pressure_angle=pressure_angle,
                helix_angle=helix_angle,
                mod=mod,
@@ -52,7 +56,8 @@ module herringbone_gear(pressure_angle=20,
                hole_diameter=hole_diameter,
                backlash=backlash,
                addendum=addendum,
-               dedendum=dedendum);
+               dedendum=dedendum,
+               direction=direction);
   mirror([0, 0, 1]) helical_gear(pressure_angle=pressure_angle,
                helix_angle=helix_angle,
                mod=mod,
@@ -61,7 +66,8 @@ module herringbone_gear(pressure_angle=20,
                hole_diameter=hole_diameter,
                backlash=backlash,
                addendum=addendum,
-               dedendum=dedendum);
+               dedendum=dedendum,
+               direction=direction);
 }
 
 // TODO: add profile_shift, backlash, root_fillet_radius
@@ -163,7 +169,7 @@ function fillet_points(base_radius, root_radius, num_teeth, tooth_center_angle) 
 // To find t_stop, a right triangle can be drawn with sides a = pitch_radius - addendum, b = t_stop*pitch_radius (length of arc/string), c = top_radius
 module undercut_profile(addendum, pitch_radius, top_radius) {
   t_stop = to_deg(sqrt(top_radius^2 - (pitch_radius - addendum)^2)/pitch_radius);
-  points = [for (t = [0:t_stop]) tip_arc_point(addendum, pitch_radius, t)];
+  points = [for (t = [0:step:t_stop]) tip_arc_point(addendum, pitch_radius, t)];
   polygon(points);
 }
 
@@ -174,7 +180,7 @@ function point_on_circle(r, t) = [r*cos(t), r*sin(t)];
 function involute_point(r, t) = [inv_x(r, t), inv_y(r, t)];
 
 // Get a series of points representing the involute curve between the two angles
-function involute_points(r, t_start, t_end, step=1) = [for (t = [t_start:step:t_end]) involute_point(r, t)];
+function involute_points(r, t_start, t_end) = [for (t = [t_start:step:t_end]) involute_point(r, t)];
 
 // Get the x value for point on the involute curve at the given angle
 function inv_x(r, t) = r*(cos(t) + to_rad(t)*sin(t));
@@ -219,9 +225,7 @@ function to_rad(a) = a*PI/180;
 function distance(p1, p2) = sqrt((p1[0] - p2[0])^2 + (p1[1] - p2[1])^2);
 
 // Get points representing the arc
-function arc_points(r, t_start, t_end, center) = translate_points([for (a = [t_start:t_end]) point_on_circle(r, a)], center);
-
-
+function arc_points(r, t_start, t_end, center) = translate_points([for (a = [t_start:step:t_end]) point_on_circle(r, a)], center);
 
 module ring(radius) {
   translate([0, 0, .5]) difference() {
