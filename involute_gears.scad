@@ -85,7 +85,6 @@ module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum
   rack_chordal_thickness = PI*mod/2;
   distance_rolled = rack_chordal_thickness/2 - addendum*mod*tan(pressure_angle);
   angle_from_centered = to_deg(distance_rolled/pitch_radius);
-  angle_offset = 180/num_teeth - angle_from_centered;
 
   tooth_ps = tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch_radius, top_radius, backlash);
   // Points are listed from +x to -x, so go clockwise
@@ -96,8 +95,9 @@ module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum
 
     for (i = [0:num_teeth-1]) {
       rotate(360*i/num_teeth) {
-        rotate(angle_offset) undercut_profile(addendum*mod, pitch_radius, top_radius);
-        mirror([0, 1, 0]) rotate(angle_offset) undercut_profile(addendum*mod, pitch_radius, top_radius);
+        half_undercut_points = undercut_profile_points(addendum*mod, pitch_radius, top_radius);
+        undercut_points = concat(rotate_points(half_undercut_points, -angle_from_centered), rotate_points(mirror_points(reverse(half_undercut_points)), angle_from_centered));
+        rotate(180/num_teeth) polygon(undercut_points);
       }
     }
 
@@ -167,11 +167,11 @@ function fillet_points(base_radius, root_radius, num_teeth, tooth_center_angle) 
 // Can be thought of as an offset inwards of an involute since the rack pitch line is a straight line rolling along the pitch circle of the gear
 // Start the profile when the tooth tip is deepest
 // To find t_stop, a right triangle can be drawn with sides a = pitch_radius - addendum, b = t_stop*pitch_radius (length of arc/string), c = top_radius
-module undercut_profile(addendum, pitch_radius, top_radius) {
-  t_stop = to_deg(sqrt(top_radius^2 - (pitch_radius - addendum)^2)/pitch_radius);
-  points = [for (t = [0:step:t_stop]) tip_arc_point(addendum, pitch_radius, t)];
-  polygon(points);
-}
+function undercut_profile_points(addendum, pitch_radius, top_radius) =
+  let(
+    t_stop = to_deg(sqrt(top_radius^2 - (pitch_radius - addendum)^2)/pitch_radius)
+  ) [for (t = [0:step:t_stop]) tip_arc_point(addendum, pitch_radius, t)];
+
 
 // Get the [x, y] coordinates for a point on a circle at a given angle
 function point_on_circle(r, t) = [r*cos(t), r*sin(t)];
