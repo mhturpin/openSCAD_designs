@@ -1,5 +1,5 @@
 $fn = $preview ? 10 : 200;
-step = $preview ? 45 : 5;
+step = $preview ? 10 : 5;
 
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf
 // https://www.tec-science.com/mechanical-power-transmission/involute-gear/calculation-of-involute-gears/
