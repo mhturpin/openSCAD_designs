@@ -99,7 +99,7 @@ module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum
           // Use standard addendum of 1*module
           half_undercut_points = undercut_profile_points(mod, pitch_radius, top_radius);
           undercut_points = concat(rotate_points(half_undercut_points, -angle_from_centered), rotate_points(mirror_points(reverse(half_undercut_points)), angle_from_centered));
-          #rotate(180/num_teeth) polygon(undercut_points);
+          rotate(180/num_teeth) polygon(undercut_points);
         }
       }
     }
