@@ -70,7 +70,7 @@ module herringbone_gear(pressure_angle=20,
                direction=direction);
 }
 
-// TODO: add profile_shift, backlash, root_fillet_radius
+// TODO: add profile_shift, root_fillet_radius
 module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum) {
   // Base gear dimension calculations
   pitch_diameter = num_teeth*mod;
@@ -95,7 +95,8 @@ module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum
 
     for (i = [0:num_teeth-1]) {
       rotate(360*i/num_teeth) {
-        half_undercut_points = undercut_profile_points(addendum*mod, pitch_radius, top_radius);
+        // Use standard addendum of 1*module
+        half_undercut_points = undercut_profile_points(mod, pitch_radius, top_radius);
         undercut_points = concat(rotate_points(half_undercut_points, -angle_from_centered), rotate_points(mirror_points(reverse(half_undercut_points)), angle_from_centered));
         rotate(180/num_teeth) polygon(undercut_points);
       }
@@ -137,7 +138,6 @@ function contact_surface_points(base_radius, t_start, t_end, tooth_center_angle)
 // Needed because involute doesn't extend to the bottom of the root
 // If root_radius >= base_radius, don't return anything since a fillet radius is not needed
 // Center of tooth on x axis, points above x axis
-// TODO: not working for teeth < 8, pressure_angle = 20
 function fillet_points(base_radius, root_radius, num_teeth, tooth_center_angle) =
   let(
     half_root_angle = 180/num_teeth - tooth_center_angle,
