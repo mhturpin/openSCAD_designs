@@ -1,5 +1,4 @@
-$fn = $preview ? 10 : 200;
-step = $preview ? 10 : 5;
+step = $preview ? 10 : 1;
 
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf
 // https://www.tec-science.com/mechanical-power-transmission/involute-gear/calculation-of-involute-gears/
@@ -48,26 +47,28 @@ module herringbone_gear(pressure_angle=20,
                     reverse=false) {
   direction = reverse ? "left" : "right";
 
-  helical_gear(pressure_angle=pressure_angle,
-               helix_angle=helix_angle,
-               mod=mod,
-               num_teeth=num_teeth,
-               thickness=thickness/2,
-               hole_diameter=hole_diameter,
-               backlash=backlash,
-               addendum=addendum,
-               dedendum=dedendum,
-               direction=direction);
-  mirror([0, 0, 1]) helical_gear(pressure_angle=pressure_angle,
-               helix_angle=helix_angle,
-               mod=mod,
-               num_teeth=num_teeth,
-               thickness=thickness/2,
-               hole_diameter=hole_diameter,
-               backlash=backlash,
-               addendum=addendum,
-               dedendum=dedendum,
-               direction=direction);
+  translate([0, 0, thickness/2]) {
+    helical_gear(pressure_angle=pressure_angle,
+                 helix_angle=helix_angle,
+                 mod=mod,
+                 num_teeth=num_teeth,
+                 thickness=thickness/2,
+                 hole_diameter=hole_diameter,
+                 backlash=backlash,
+                 addendum=addendum,
+                 dedendum=dedendum,
+                 direction=direction);
+    mirror([0, 0, 1]) helical_gear(pressure_angle=pressure_angle,
+                 helix_angle=helix_angle,
+                 mod=mod,
+                 num_teeth=num_teeth,
+                 thickness=thickness/2,
+                 hole_diameter=hole_diameter,
+                 backlash=backlash,
+                 addendum=addendum,
+                 dedendum=dedendum,
+                 direction=direction);
+  }
 }
 
 // TODO: add profile_shift, root_fillet_radius
@@ -80,12 +81,6 @@ module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum
   root_radius = pitch_radius - (dedendum*mod);
   top_radius = pitch_radius + (addendum*mod);
 
-  // Undercut calculations
-  // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=42
-  rack_chordal_thickness = PI*mod/2;
-  distance_rolled = rack_chordal_thickness/2 - addendum*mod*tan(pressure_angle);
-  angle_from_centered = to_deg(distance_rolled/pitch_radius);
-
   tooth_ps = tooth_points(pressure_angle, num_teeth, root_radius, base_radius, pitch_radius, top_radius, backlash);
   // Points are listed from +x to -x, so go clockwise
   gear_points = [for (i = [0:num_teeth-1]) each rotate_points(tooth_ps, -360*i/num_teeth)];
@@ -94,11 +89,17 @@ module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum
     polygon(gear_points);
 
     if (dedendum == 1.25) {
+      // Undercut calculations
+      // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=42
+      rack_chordal_thickness = PI*mod/2;
+      distance_rolled = rack_chordal_thickness/2 - addendum*mod*tan(pressure_angle);
+      angle_from_centered = to_deg(distance_rolled/pitch_radius);
+      // Use standard addendum of 1*module
+      half_undercut_points = undercut_profile_points(mod, pitch_radius, top_radius);
+      undercut_points = concat(rotate_points(half_undercut_points, -angle_from_centered), rotate_points(mirror_points(reverse(half_undercut_points)), angle_from_centered));
+
       for (i = [0:num_teeth-1]) {
         rotate(360*i/num_teeth) {
-          // Use standard addendum of 1*module
-          half_undercut_points = undercut_profile_points(mod, pitch_radius, top_radius);
-          undercut_points = concat(rotate_points(half_undercut_points, -angle_from_centered), rotate_points(mirror_points(reverse(half_undercut_points)), angle_from_centered));
           rotate(180/num_teeth) polygon(undercut_points);
         }
       }

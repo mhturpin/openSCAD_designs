@@ -43,7 +43,7 @@ module base_piece() {
   difference() {
     intersection() {
       // Move so cut bottom is on the x axis
-      translate([0, -base_height, thickness/2]) herringbone_gear(pressure_angle=pressure_angle, mod=mod, num_teeth=base_teeth, thickness=thickness, backlash=0.2);
+      translate([0, -base_height, 0]) herringbone_gear(pressure_angle=pressure_angle, mod=mod, num_teeth=base_teeth, thickness=thickness, backlash=0.2);
       translate([-base_length/2, 0, 0]) cube([base_length, arm_radius-base_height, thickness]);
     }
 
@@ -64,7 +64,7 @@ module top_piece() {
   difference() {
     union() {
       intersection() {
-        rotate(180/top_teeth) herringbone_gear(pressure_angle=pressure_angle, mod=mod, num_teeth=top_teeth, thickness=thickness, reverse=true);
+        translate([0, 0, -thickness/2]) rotate(180/top_teeth) herringbone_gear(pressure_angle=pressure_angle, mod=mod, num_teeth=top_teeth, thickness=thickness, reverse=true);
         translate([-3*root_radius, -2*root_radius, -thickness/2]) cube([root_radius*4, root_radius*4, thickness]);
         //top_gear_mask();
       }
@@ -183,5 +183,5 @@ module hexagon(width) {
 }
 
 
-//base_piece();
+base_piece();
 translate([0, arm_radius-base_height, thickness/2]) top_piece();

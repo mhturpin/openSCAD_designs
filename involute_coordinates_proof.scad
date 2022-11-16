@@ -1,6 +1,6 @@
 include <involute_gear.scad>
 
-// Reference https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf page T18
+// Reference https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=18
 // Angles marked by yellow spheres are theta (t)
 // Red vertices mark the length of string unraveled (l)
 // r = radius of base circle
