@@ -83,7 +83,8 @@ module planetary_gear_set(
             sun_hole_diameter=0,
             planet_hole_diameter=0,
             backlash=0,
-            translate_internals=0) {
+            translate_sun=[0, 0, 0],
+            translate_planets=[0, 0, 0]) {
   assert((ring_teeth - sun_teeth)%2 == 0, "Planet gears must have an integer number of teeth");
 
   planet_teeth = (ring_teeth - sun_teeth)/2;
@@ -98,7 +99,7 @@ module planetary_gear_set(
 
   // Sun gear
   sun_rotation = planet_teeth%2 == 0 ? 180/sun_teeth : 0;
-  translate([translate_internals, 0, 0]) rotate(sun_rotation) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=sun_teeth, thickness=thickness, hole_diameter=sun_hole_diameter, backlash=backlash);
+  translate(translate_sun) rotate(sun_rotation) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=sun_teeth, thickness=thickness, hole_diameter=sun_hole_diameter, backlash=backlash);
 
   // Planet gears
   dist = pitch_radius(mod, ring_teeth) - pitch_radius(mod, planet_teeth);
@@ -112,7 +113,7 @@ module planetary_gear_set(
 
   assert(planet_od < planet_center_to_center, "Planet gears will interfere");
 
-  translate([translate_internals, 0, 0]) for (i = [0:num_planets-1]) {
+  translate(translate_planets) for (i = [0:num_planets-1]) {
     location_angle = round(i*spacing_number)*360/(sun_teeth + ring_teeth);
     offset_coefficient = (location_angle%ring_angle_per_tooth)/ring_angle_per_tooth;
     rotation = offset_coefficient*360/planet_teeth;

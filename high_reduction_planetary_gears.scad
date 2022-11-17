@@ -6,7 +6,7 @@ mod = 2;
 pressure_angle = 25;
 thickness = 15;
 backlash = 0.1;
-ti = 70;
+tr_planets = [70, 0, 0];
 
 module divider(inner_r, outer_r) {
   difference() {
@@ -24,31 +24,33 @@ module hexagon(width) {
 difference() {
   union() {
     // Input
-    planetary_gear_set(sun_teeth=10, ring_teeth=28, ring_width=5, num_planets=4, pressure_angle=pressure_angle, mod=mod, thickness=thickness, planet_hole_diameter=5, backlash=backlash, translate_internals=ti);
+    planetary_gear_set(sun_teeth=10, ring_teeth=28, ring_width=5, num_planets=4, pressure_angle=pressure_angle, mod=mod, thickness=thickness, planet_hole_diameter=5, backlash=backlash, translate_planets=tr_planets);
 
     // Output
-    translate([0, 0, -17]) planetary_gear_set(sun_teeth=9, ring_teeth=25, ring_width=8, num_planets=4, pressure_angle=pressure_angle, mod=mod, thickness=thickness, planet_hole_diameter=5, backlash=backlash, translate_internals=ti);
+    translate([0, 0, -17]) planetary_gear_set(sun_teeth=9, ring_teeth=25, ring_width=5, num_planets=4, pressure_angle=pressure_angle, mod=mod, thickness=thickness, planet_hole_diameter=5, backlash=backlash, translate_planets=tr_planets);
+    
+    translate([0, 0, -thickness-4]) difference() {
+      cylinder(thickness+4, 32, 35);
+      translate([0, 0, -0.001]) cylinder(thickness+4.002, 31, 31);
+    }
 
     // Connect sun gears
-    translate([ti, 0, -2]) cylinder(2, 15, 15);
+    translate([0, 0, -2]) cylinder(2, 15, 15);
 
     // Input cap
     translate([0, 0, 16]) divider(25, 35);
 
     // Center divider
-    translate([0, 0, -2]) divider(20, 35);
+    translate([0, 0, -2]) divider(20, 32);
 
     // Output cap
-    translate([0, 0, -19]) divider(22, 35);
+    translate([0, 0, -19]) divider(22, 32);
   }
 
-  translate([ti, 0, -25]) linear_extrude(50) hexagon(5.3);
+  translate([0, 0, -25]) linear_extrude(50) hexagon(5.3);
 
   // Screw body 21x2.2
   // 22 - 2+1 (cap) - 15 (ring above 0) = 4
   rotate(180/28) translate([30, 0, -4]) cylinder(22.1, 1.1, 1.1);
   rotate(180/28) translate([-30, 0, -4]) cylinder(22.1, 1.1, 1.1);
 }
-
-
-gear(pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=backlash);
