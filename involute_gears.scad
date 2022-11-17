@@ -71,6 +71,56 @@ module herringbone_gear(pressure_angle=20,
   }
 }
 
+// https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=61
+module planetary_gear_set(
+            sun_teeth=8,
+            ring_teeth=24,
+            ring_width=2,
+            num_planets=4,
+            pressure_angle=20,
+            mod=1,
+            thickness=1,
+            sun_hole_diameter=0,
+            planet_hole_diameter=0,
+            backlash=0,
+            translate_internals=0) {
+  assert((ring_teeth - sun_teeth)%2 == 0, "Planet gears must have an integer number of teeth");
+
+  planet_teeth = (ring_teeth - sun_teeth)/2;
+  ring_radius = pitch_radius(mod, ring_teeth) + mod + ring_width;
+  echo("Ring radius", ring_radius);
+
+  // Ring gear
+  difference() {
+    cylinder(thickness, ring_radius, ring_radius);
+    translate([0, 0, -0.1]) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=ring_teeth, thickness=thickness+0.2, backlash=-backlash, addendum=1.25, dedendum=1);
+  }
+
+  // Sun gear
+  sun_rotation = planet_teeth%2 == 0 ? 180/sun_teeth : 0;
+  translate([translate_internals, 0, 0]) rotate(sun_rotation) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=sun_teeth, thickness=thickness, hole_diameter=sun_hole_diameter, backlash=backlash);
+
+  // Planet gears
+  dist = pitch_radius(mod, ring_teeth) - pitch_radius(mod, planet_teeth);
+  // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=61 equation (13-8)
+  spacing_number = (sun_teeth + ring_teeth)/num_planets;
+  ring_angle_per_tooth = 360/ring_teeth;
+
+  half_min_spacing_angle = floor(spacing_number)*180/(sun_teeth + ring_teeth);
+  planet_od = pitch_radius(mod, planet_teeth)*2 + 2*mod;
+  planet_center_to_center = 2*(pitch_radius(mod, sun_teeth) + pitch_radius(mod, planet_teeth))*sin(half_min_spacing_angle);
+
+  assert(planet_od < planet_center_to_center, "Planet gears will interfere");
+
+  translate([translate_internals, 0, 0]) for (i = [0:num_planets-1]) {
+    location_angle = round(i*spacing_number)*360/(sun_teeth + ring_teeth);
+    offset_coefficient = (location_angle%ring_angle_per_tooth)/ring_angle_per_tooth;
+    rotation = offset_coefficient*360/planet_teeth;
+
+    rotate(location_angle) translate([dist, 0, 0]) rotate(-rotation) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=planet_teeth, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash);
+  }
+}
+
 // TODO: add profile_shift, root_fillet_radius
 module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum) {
   // Base gear dimension calculations
@@ -229,6 +279,9 @@ function distance(p1, p2) = sqrt((p1[0] - p2[0])^2 + (p1[1] - p2[1])^2);
 
 // Get points representing the arc
 function arc_points(r, t_start, t_end, center) = translate_points([for (a = [t_start:step:t_end]) point_on_circle(r, a)], center);
+
+// Get the pitch radius
+function pitch_radius(mod, teeth) = mod*teeth/2;
 
 module ring(radius) {
   translate([0, 0, .5]) difference() {
