@@ -93,7 +93,7 @@ module planetary_gear_set(
   // Ring gear
   difference() {
     cylinder(thickness, ring_radius, ring_radius);
-    translate([0, 0, -0.1]) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=ring_teeth, thickness=thickness+0.2, backlash=-backlash, addendum=1.25, dedendum=1);
+    translate([0, 0, -0.1]) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=ring_teeth, thickness=thickness+0.2, backlash=-backlash, addendum=1.25, dedendum=1-0.2/mod);
   }
 
   // Sun gear
