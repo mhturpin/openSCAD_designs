@@ -6,7 +6,7 @@ mod = 2;
 pressure_angle = 25;
 thickness = 15;
 backlash = 0.1;
-ti = 0;
+ti = 70;
 
 module divider(inner_r, outer_r) {
   difference() {
@@ -30,7 +30,7 @@ difference() {
     translate([0, 0, -17]) planetary_gear_set(sun_teeth=9, ring_teeth=25, ring_width=8, num_planets=4, pressure_angle=pressure_angle, mod=mod, thickness=thickness, planet_hole_diameter=5, backlash=backlash, translate_internals=ti);
 
     // Connect sun gears
-    translate([ti, 0, -2]) cylinder(2, 7, 7);
+    translate([ti, 0, -2]) cylinder(2, 15, 15);
 
     // Input cap
     translate([0, 0, 16]) divider(25, 35);
@@ -42,11 +42,13 @@ difference() {
     translate([0, 0, -19]) divider(22, 35);
   }
 
-  translate([ti, 0, -25]) linear_extrude(50) hexagon(4);
-  
+  translate([ti, 0, -25]) linear_extrude(50) hexagon(5.3);
+
   // Screw body 21x2.2
   // 22 - 2+1 (cap) - 15 (ring above 0) = 4
   rotate(180/28) translate([30, 0, -4]) cylinder(22.1, 1.1, 1.1);
   rotate(180/28) translate([-30, 0, -4]) cylinder(22.1, 1.1, 1.1);
-  
 }
+
+
+gear(pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=backlash);
