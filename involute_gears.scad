@@ -1,27 +1,27 @@
-step = $preview ? 10 : 1;
+step = $preview ? 5 : 1;
 
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf
 // https://www.tec-science.com/mechanical-power-transmission/involute-gear/calculation-of-involute-gears/
 // https://mathworld.wolfram.com/CircleInvolute.html
 
-module gear(pressure_angle=20,
+module gear(num_teeth=32,
+            pressure_angle=20,
             mod=1,
-            num_teeth=32,
             thickness=1,
             hole_diameter=0,
             backlash=0,
             addendum=1,
             dedendum=1.25) {
   linear_extrude(height=thickness, convexity=10) {
-    gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum);
+    gear_2d(num_teeth, pressure_angle, mod, hole_diameter, backlash, addendum, dedendum);
   }
 }
 
-module helical_gear(pressure_angle=20,
+module helical_gear(num_teeth=32,
+                    pressure_angle=20,
                     helix_angle=30,
                     direction="right",
                     mod=1,
-                    num_teeth=32,
                     thickness=1,
                     hole_diameter=0,
                     backlash=0,
@@ -31,75 +31,84 @@ module helical_gear(pressure_angle=20,
   twist = dir*tan(helix_angle)*thickness*360/(num_teeth*mod*PI);
 
   linear_extrude(height=thickness, twist=twist, convexity=10) {
-    gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum);
+    gear_2d(num_teeth, pressure_angle, mod, hole_diameter, backlash, addendum, dedendum);
   }
 }
 
-module herringbone_gear(pressure_angle=20,
-                    helix_angle=30,
-                    mod=1,
-                    num_teeth=32,
-                    thickness=1,
-                    hole_diameter=0,
-                    backlash=0,
-                    addendum=1,
-                    dedendum=1.25,
-                    reverse=false) {
+module herringbone_gear(num_teeth=32,
+                        pressure_angle=20,
+                        helix_angle=30,
+                        mod=1,
+                        thickness=1,
+                        hole_diameter=0,
+                        backlash=0,
+                        addendum=1,
+                        dedendum=1.25,
+                        reverse=false) {
   direction = reverse ? "left" : "right";
 
   translate([0, 0, thickness/2]) {
-    helical_gear(pressure_angle=pressure_angle,
+    helical_gear(num_teeth=num_teeth,
+                 pressure_angle=pressure_angle,
                  helix_angle=helix_angle,
                  mod=mod,
-                 num_teeth=num_teeth,
                  thickness=thickness/2,
                  hole_diameter=hole_diameter,
                  backlash=backlash,
                  addendum=addendum,
                  dedendum=dedendum,
                  direction=direction);
-    mirror([0, 0, 1]) helical_gear(pressure_angle=pressure_angle,
-                 helix_angle=helix_angle,
-                 mod=mod,
-                 num_teeth=num_teeth,
-                 thickness=thickness/2,
-                 hole_diameter=hole_diameter,
-                 backlash=backlash,
-                 addendum=addendum,
-                 dedendum=dedendum,
-                 direction=direction);
+    mirror([0, 0, 1]) helical_gear(num_teeth=num_teeth,
+                                   pressure_angle=pressure_angle,
+                                   helix_angle=helix_angle,
+                                   mod=mod,
+                                   thickness=thickness/2,
+                                   hole_diameter=hole_diameter,
+                                   backlash=backlash,
+                                   addendum=addendum,
+                                   dedendum=dedendum,
+                                   direction=direction);
+  }
+}
+
+module ring_gear(num_teeth=24,
+                 ring_width=2,
+                 pressure_angle=20,
+                 mod=1,
+                 thickness=1,
+                 backlash=0) {
+  ring_radius = pitch_radius(mod, num_teeth) + mod + ring_width;
+  echo(str("Ring radius: ", ring_radius));
+
+  difference() {
+    cylinder(thickness, ring_radius, ring_radius);
+    translate([0, 0, -0.1]) gear(num_teeth=num_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness+0.2, backlash=-backlash, addendum=1.25, dedendum=1-0.2/mod);
   }
 }
 
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=61
-module planetary_gear_set(
-            sun_teeth=8,
-            ring_teeth=24,
-            ring_width=2,
-            num_planets=4,
-            pressure_angle=20,
-            mod=1,
-            thickness=1,
-            sun_hole_diameter=0,
-            planet_hole_diameter=0,
-            backlash=0,
-            translate_sun=[0, 0, 0],
-            translate_planets=[0, 0, 0]) {
+module planetary_gear_set(sun_teeth=8,
+                          ring_teeth=24,
+                          ring_width=2,
+                          num_planets=4,
+                          pressure_angle=20,
+                          mod=1,
+                          thickness=1,
+                          sun_hole_diameter=0,
+                          planet_hole_diameter=0,
+                          backlash=0,
+                          translate_sun=[0, 0, 0],
+                          translate_planets=[0, 0, 0]) {
   assert((ring_teeth - sun_teeth)%2 == 0, "Planet gears must have an integer number of teeth");
 
   planet_teeth = (ring_teeth - sun_teeth)/2;
-  ring_radius = pitch_radius(mod, ring_teeth) + mod + ring_width;
-  echo("Ring radius", ring_radius);
 
   // Ring gear
-  difference() {
-    cylinder(thickness, ring_radius, ring_radius);
-    translate([0, 0, -0.1]) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=ring_teeth, thickness=thickness+0.2, backlash=-backlash, addendum=1.25, dedendum=1-0.2/mod);
-  }
+  ring_gear(num_teeth=ring_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=backlash);
 
   // Sun gear
   sun_rotation = planet_teeth%2 == 0 ? 180/sun_teeth : 0;
-  translate(translate_sun) rotate(sun_rotation) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=sun_teeth, thickness=thickness, hole_diameter=sun_hole_diameter, backlash=backlash);
+  translate(translate_sun) rotate(sun_rotation) gear(num_teeth=sun_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=sun_hole_diameter, backlash=backlash);
 
   // Planet gears
   dist = pitch_radius(mod, ring_teeth) - pitch_radius(mod, planet_teeth);
@@ -118,12 +127,14 @@ module planetary_gear_set(
     offset_coefficient = (location_angle%ring_angle_per_tooth)/ring_angle_per_tooth;
     rotation = offset_coefficient*360/planet_teeth;
 
-    rotate(location_angle) translate([dist, 0, 0]) rotate(-rotation) gear(pressure_angle=pressure_angle, mod=mod, num_teeth=planet_teeth, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash);
+    echo(str("Planet angle: ", location_angle));
+
+    rotate(location_angle) translate([dist, 0, 0]) rotate(-rotation) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash);
   }
 }
 
 // TODO: add profile_shift, root_fillet_radius
-module gear_2d(pressure_angle, mod, num_teeth, hole_diameter, backlash, addendum, dedendum) {
+module gear_2d(num_teeth, pressure_angle, mod, hole_diameter, backlash, addendum, dedendum) {
   // Base gear dimension calculations
   pitch_diameter = num_teeth*mod;
   pitch_radius = pitch_diameter/2;
