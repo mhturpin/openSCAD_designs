@@ -127,7 +127,7 @@ module planetary_gear_set(sun_teeth=8,
     offset_coefficient = (location_angle%ring_angle_per_tooth)/ring_angle_per_tooth;
     rotation = offset_coefficient*360/planet_teeth;
 
-    echo(str("Planet angle: ", location_angle));
+    // echo(str("Planet angle: ", location_angle));
 
     rotate(location_angle) translate([dist, 0, 0]) rotate(-rotation) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash);
   }
