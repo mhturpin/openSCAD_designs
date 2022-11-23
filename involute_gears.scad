@@ -1,34 +1,21 @@
+$fn = $preview ? 50 : 200;
 step = $preview ? 5 : 1;
 
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf
 // https://www.tec-science.com/mechanical-power-transmission/involute-gear/calculation-of-involute-gears/
 // https://mathworld.wolfram.com/CircleInvolute.html
 
+// For a helical gear, pass in the helix angle, positive for a right handed helix
 module gear(num_teeth=32,
             pressure_angle=20,
             mod=1,
             thickness=1,
             hole_diameter=0,
             backlash=0,
+            helix_angle=0,
             addendum=1,
             dedendum=1.25) {
-  linear_extrude(height=thickness, convexity=10) {
-    gear_2d(num_teeth, pressure_angle, mod, hole_diameter, backlash, addendum, dedendum);
-  }
-}
-
-module helical_gear(num_teeth=32,
-                    pressure_angle=20,
-                    helix_angle=30,
-                    direction="right",
-                    mod=1,
-                    thickness=1,
-                    hole_diameter=0,
-                    backlash=0,
-                    addendum=1,
-                    dedendum=1.25) {
-  dir = direction == "left" ? 1 : -1;
-  twist = dir*tan(helix_angle)*thickness*360/(num_teeth*mod*PI);
+  twist = tan(-helix_angle)*thickness*360/(num_teeth*mod*PI);
 
   linear_extrude(height=thickness, twist=twist, convexity=10) {
     gear_2d(num_teeth, pressure_angle, mod, hole_diameter, backlash, addendum, dedendum);
@@ -45,29 +32,27 @@ module herringbone_gear(num_teeth=32,
                         addendum=1,
                         dedendum=1.25,
                         reverse=false) {
-  direction = reverse ? "left" : "right";
+  direction = reverse ? 1 : -1;
 
   translate([0, 0, thickness/2]) {
-    helical_gear(num_teeth=num_teeth,
-                 pressure_angle=pressure_angle,
-                 helix_angle=helix_angle,
-                 mod=mod,
-                 thickness=thickness/2,
-                 hole_diameter=hole_diameter,
-                 backlash=backlash,
-                 addendum=addendum,
-                 dedendum=dedendum,
-                 direction=direction);
-    mirror([0, 0, 1]) helical_gear(num_teeth=num_teeth,
-                                   pressure_angle=pressure_angle,
-                                   helix_angle=helix_angle,
-                                   mod=mod,
-                                   thickness=thickness/2,
-                                   hole_diameter=hole_diameter,
-                                   backlash=backlash,
-                                   addendum=addendum,
-                                   dedendum=dedendum,
-                                   direction=direction);
+    gear(num_teeth=num_teeth,
+         pressure_angle=pressure_angle,
+         helix_angle=direction*helix_angle,
+         mod=mod,
+         thickness=thickness/2,
+         hole_diameter=hole_diameter,
+         backlash=backlash,
+         addendum=addendum,
+         dedendum=dedendum);
+    mirror([0, 0, 1]) gear(num_teeth=num_teeth,
+                           pressure_angle=pressure_angle,
+                           helix_angle=direction*helix_angle,
+                           mod=mod,
+                           thickness=thickness/2,
+                           hole_diameter=hole_diameter,
+                           backlash=backlash,
+                           addendum=addendum,
+                           dedendum=dedendum);
   }
 }
 
@@ -86,6 +71,7 @@ module ring_gear(num_teeth=24,
   }
 }
 
+// TODO: add helical, herringbone types
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=61
 module planetary_gear_set(sun_teeth=8,
                           ring_teeth=24,
@@ -130,6 +116,81 @@ module planetary_gear_set(sun_teeth=8,
     // echo(str("Planet angle: ", location_angle));
 
     rotate(location_angle) translate([dist, 0, 0]) rotate(-rotation) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash);
+  }
+}
+
+// https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=42
+module rack(length=PI*20,
+            width=10,
+            base_thickness=5,
+            pressure_angle=20,
+            mod=1,
+            backlash=0,
+            addendum=1,
+            dedendum=1.25,
+            helix_angle=0) {
+  tooth_height = (addendum + dedendum)*mod;
+  circular_pitch = PI*mod;
+  base_x_offset = circular_pitch/4 + dedendum*mod*tan(pressure_angle);
+  tip_x_offset = circular_pitch/4 - addendum*mod*tan(pressure_angle);
+  additional_length = abs(tan(helix_angle)*width); // The additional length we need if it's a helical rack
+  initial_length = length + 2*additional_length;
+
+  pitch_x_offset = dedendum*mod*tan(pressure_angle);
+  pitch_y = dedendum*mod;
+  num_teeth = floor(initial_length/(circular_pitch));
+  tooth_points = [[-base_x_offset, 0], [-tip_x_offset, tooth_height], [tip_x_offset, tooth_height], [base_x_offset, 0]];
+
+  // [[scale x,     skew y (+x), skew z (+x), translate x]
+  //  [skew x (+y), scale y,     skew z (+y), translate y]
+  //  [skew x (+z), skew y (+z), scale z,     translate z]
+  //  [nothing,     nothing,     nothing,     shrink all ]
+  skew_matrix = [[1, 0, tan(helix_angle), 0],
+                 [0, 1, 0, 0],
+                 [0, 0, 1, 0],
+                 [0, 0, 0, 1]];
+
+  translate([-length/2, 0, 0]) intersection() {
+    translate([-additional_length, 0, 0]) multmatrix(skew_matrix) {
+      cube([initial_length, base_thickness, width]);
+
+      for (i = [0:num_teeth]) {
+        translate([circular_pitch*i, base_thickness, 0]) linear_extrude(width) polygon(tooth_points);
+      }
+    }
+
+    cube([length, base_thickness+tooth_height, width]);
+  }
+}
+
+module herringbone_rack(length=PI*20,
+                        width=10,
+                        base_thickness=5,
+                        pressure_angle=20,
+                        mod=1,
+                        backlash=0,
+                        addendum=1,
+                        dedendum=1.25,
+                        helix_angle=30) {
+  translate([0, 0, width/2]) {
+    rack(length=length,
+         width=width/2,
+         base_thickness=base_thickness,
+         pressure_angle=pressure_angle,
+         mod=mod,
+         backlash=backlash,
+         addendum=addendum,
+         dedendum=dedendum,
+         helix_angle=helix_angle);
+    mirror([0, 0, 1]) rack(length=length,
+                           width=width/2,
+                           base_thickness=base_thickness,
+                           pressure_angle=pressure_angle,
+                           mod=mod,
+                           backlash=backlash,
+                           addendum=addendum,
+                           dedendum=dedendum,
+                           helix_angle=helix_angle);
   }
 }
 

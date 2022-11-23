@@ -1,4 +1,4 @@
-use <involute_gears.scad>
+use <../involute_gears.scad>
 
 $fn = $preview ? 25 : 100;
 

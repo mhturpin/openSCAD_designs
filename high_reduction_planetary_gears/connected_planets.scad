@@ -1,11 +1,11 @@
-use <involute_gears.scad>
+use <../involute_gears.scad>
 
 $fn = $preview ? 50 : 200;
 
 sun_teeth = 20;
 ring_teeth = 60;
 planet_teeth = (ring_teeth - sun_teeth)/2;
-tooth_difference = 1;
+tooth_difference = -1;
 ring_width = 2;
 planets = 5;
 pressure_angle = 20;
@@ -25,7 +25,8 @@ module hexagon(width) {
 
 difference() {
   planetary_gear_set(sun_teeth=sun_teeth, ring_teeth=ring_teeth, ring_width=ring_width, num_planets=planets, pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=backlash, translate_planets=translate_planets);
-  translate([0, 0, 1]) linear_extrude(20.2) hexagon(4.2);
+  // 0.2 clearence close at first, but loosened up
+  translate([0, 0, 1]) linear_extrude(20.2) hexagon(4.1);
 }
 
 planet_dist = pitch_radius(mod, sun_teeth) + pitch_radius(mod, planet_teeth);
