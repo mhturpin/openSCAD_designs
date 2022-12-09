@@ -14,6 +14,7 @@ thickness = 10;
 backlash = 0.1;
 translate_planets = [50, 0, 0];
 helix_angle = 30;
+rack_base = 5;
 
 in_ring_pitch_r = pitch_radius(mod, ring_teeth);
 in_ring_r = in_ring_pitch_r + mod + ring_width;
@@ -47,11 +48,11 @@ out_sun_teeth = ring_teeth + tooth_difference - 2*out_planet_teeth;
 translate([0, 0, -2*thickness-1]) planetary_gear_set(sun_teeth=out_sun_teeth, ring_teeth=ring_teeth+tooth_difference, ring_width=ring_width, num_planets=planets, pressure_angle=pressure_angle, mod=mod, thickness=2*thickness, backlash=backlash, translate_planets=translate_planets);
 
 // Output outer gear
-teeth = round(2*out_ring_r/mod+3*mod)+6;
-echo(teeth);
+output_teeth = round(2*out_ring_r/mod+3*mod)+6;
+echo(output_teeth);
 
 translate([0, 0, -2*thickness-1]) difference() {
-  herringbone_gear(num_teeth=teeth, pressure_angle=pressure_angle, mod=mod, thickness=2*thickness, backlash=backlash, helix_angle=helix_angle);
+  herringbone_gear(num_teeth=output_teeth, pressure_angle=pressure_angle, mod=mod, thickness=2*thickness, backlash=backlash, helix_angle=helix_angle);
   translate([0, 0, -0.1]) cylinder(2*thickness+0.2, out_ring_r, out_ring_r);
 }
 // Planet connectors
@@ -63,12 +64,19 @@ translate(translate_planets) for (i = [0:planets-1]) {
 }
 
 // Stand
+center_height = pitch_radius(mod, output_teeth) + rack_base + 1.25*mod;
 difference() {
-  // change height to accomodate rack
-  translate([-in_ring_r, -in_ring_r, 0]) cube([in_ring_r*2, out_ring_r+2, thickness+1]);
+  translate([-in_ring_r, -center_height, 0]) cube([in_ring_r*2, center_height, thickness+1]);
   translate([0, 0, -0.1]) cylinder(thickness+1.2, in_ring_r, in_ring_r);
-  translate([-in_ring_r+5, out_ring_r+2-14, 5]) rotate([-90, 0, 0]) cylinder(14.1, 1.75, 1.75);
-  translate([in_ring_r-5, out_ring_r+2-14, 5]) rotate([-90, 0, 0]) cylinder(14.1, 1.75, 1.75);
+  translate([-in_ring_r+thickness/2, -center_height-0.1, thickness/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
+  translate([in_ring_r-thickness/2, -center_height-0.1, thickness/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
+}
+
+translate([0, 0, -3*thickness-3]) difference() {
+  translate([-in_ring_r, -center_height, 0]) cube([in_ring_r*2, center_height, thickness+1]);
+  translate([0, 0, -0.1]) cylinder(thickness+1.2, in_ring_r, in_ring_r);
+  translate([-in_ring_r+thickness/2, -center_height-0.1, thickness/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
+  translate([in_ring_r-thickness/2, -center_height-0.1, thickness/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
 }
 
 // Retention rings
@@ -82,4 +90,4 @@ translate([0, 0, -thickness*3-3]) difference() {
   translate([0, 0, -0.1]) cylinder(1.2, in_ring_pitch_r-1.25*mod, in_ring_pitch_r-1.25*mod);
 }
 
-translate([0, -40, -2*thickness-1]) herringbone_rack(length=PI*40, width=thickness*2, base_thickness=5, pressure_angle=pressure_angle, mod=mod, backlash=backlash, helix_angle=-helix_angle);
+translate([0, -40, -2*thickness-1]) herringbone_rack(length=PI*20, width=thickness*2, base_thickness=rack_base, pressure_angle=pressure_angle, mod=mod, backlash=backlash, helix_angle=-helix_angle);

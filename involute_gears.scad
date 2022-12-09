@@ -119,6 +119,7 @@ module planetary_gear_set(sun_teeth=8,
   }
 }
 
+// TODO: backlash
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf#page=42
 module rack(length=PI*20,
             width=10,
