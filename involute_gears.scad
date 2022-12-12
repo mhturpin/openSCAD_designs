@@ -110,13 +110,12 @@ module planetary_gear_set(sun_teeth=8,
   assert(planet_od < planet_center_to_center, "Planet gears will interfere");
 
   translate(translate_planets) for (i = [0:num_planets-1]) {
-    location_angle = round(i*spacing_number)*360/(sun_teeth + ring_teeth);
-    offset_coefficient = (location_angle%ring_angle_per_tooth)/ring_angle_per_tooth;
-    rotation = offset_coefficient*360/planet_teeth;
+    location = round(i*spacing_number)/(sun_teeth + ring_teeth);
+    // ring_teeth*location: number of teeth traveled
+    // 360/planet_teeth: angle planet gear rotates for each tooth traveled
+    rotation = (ring_teeth*location)*(360/planet_teeth);
 
-    // echo(str("Planet angle: ", location_angle));
-
-    rotate(location_angle) translate([dist, 0, 0]) rotate(-rotation) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash);
+    rotate(location*360) translate([dist, 0, 0]) rotate(-rotation) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash);
   }
 }
 
