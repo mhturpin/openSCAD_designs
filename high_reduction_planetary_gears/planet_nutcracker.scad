@@ -1,4 +1,5 @@
 use <../involute_gears.scad>
+include <../../libraries/BOSL2/std.scad>
 
 $fn = $preview ? 50 : 200;
 
@@ -41,7 +42,18 @@ module hexagon(width) {
 }
 
 // Input set
-planetary_gear_set(sun_teeth=sun_teeth, ring_teeth=ring_teeth, ring_width=ring_width, num_planets=planets, pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=backlash, translate_planets=translate_planets);
+difference() {
+  planetary_gear_set(sun_teeth=sun_teeth, ring_teeth=ring_teeth, ring_width=ring_width, num_planets=planets, pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=backlash, translate_planets=translate_planets);
+  
+  translate(translate_planets) for (i = [0:planets-1]) {
+    angle = i*360/planets;
+    translate([planet_dist*cos(angle), planet_dist*sin(angle), 0]) {
+      translate([0, 0, thickness]) text3d(str(i+1), 0.5, 5, anchor=CENTER);
+    }
+  }
+}
+
+// Wrench attachment
 translate([0, 0, thickness]) cylinder(1, in_sun_r, in_sun_r);
 translate([0, 0, thickness+1]) linear_extrude(10) hexagon(17);
 rotate([0, 0, 30]) translate([0, 0, thickness+1]) linear_extrude(10) hexagon(17);
