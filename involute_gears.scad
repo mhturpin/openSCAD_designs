@@ -1,5 +1,5 @@
 $fn = $preview ? 50 : 200;
-step = $preview ? 5 : 1;
+step = $preview ? 10 : 5;
 
 // https://qtcgears.com/tools/catalogs/PDF_Q420/Tech.pdf
 // https://www.tec-science.com/mechanical-power-transmission/involute-gear/calculation-of-involute-gears/
@@ -84,13 +84,14 @@ module planetary_gear_set(sun_teeth=8,
                           planet_hole_diameter=0,
                           backlash=0,
                           translate_sun=[0, 0, 0],
-                          translate_planets=[0, 0, 0]) {
+                          translate_planets=[0, 0, 0],
+                          ring_thickness_offset=0) {
   assert((ring_teeth - sun_teeth)%2 == 0, "Planet gears must have an integer number of teeth");
 
   planet_teeth = (ring_teeth - sun_teeth)/2;
 
   // Ring gear
-  ring_gear(num_teeth=ring_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=backlash);
+  translate([0, 0, ring_thickness_offset/2]) ring_gear(num_teeth=ring_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness-ring_thickness_offset, backlash=backlash);
 
   // Sun gear
   sun_rotation = planet_teeth%2 == 0 ? 180/sun_teeth : 0;
