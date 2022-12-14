@@ -3,10 +3,10 @@ include <../../libraries/BOSL2/std.scad>
 
 $fn = $preview ? 50 : 200;
 
-sun_teeth = 16;
-ring_teeth = 38;
+sun_teeth = 17;
+ring_teeth = 37;
 planet_teeth = (ring_teeth - sun_teeth)/2;
-tooth_difference = -1;
+tooth_difference = 1;
 ring_width = 2;
 planets = 6;
 pressure_angle = 25;
@@ -28,7 +28,7 @@ out_sun_teeth = ring_teeth + tooth_difference - 2*out_planet_teeth;
 output_teeth = round(2*out_ring_r/mod+3*mod)+6;
 output_outer_d = 2*(pitch_radius(mod, output_teeth) + mod);
 echo("Output Teeth: ", output_teeth);
-planet_connector_r = pitch_radius(mod, planet_teeth) + mod;
+planet_connector_r = pitch_radius(mod, out_planet_teeth) + mod;
 in_sun_r = pitch_radius(mod, sun_teeth) + mod;
 center_height = pitch_radius(mod, output_teeth) + rack_base + 1.25*mod;
 
@@ -45,9 +45,10 @@ module hexagon(width) {
 difference() {
   planetary_gear_set(sun_teeth=sun_teeth, ring_teeth=ring_teeth, ring_width=ring_width, num_planets=planets, pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=backlash, translate_planets=translate_planets);
   
+  // Number planets for assembly
   translate(translate_planets) for (i = [0:planets-1]) {
     angle = i*360/planets;
-    translate([planet_dist*cos(angle), planet_dist*sin(angle), 0]) {
+    translate_polar(planet_dist, angle) {
       translate([0, 0, thickness]) text3d(str(i+1), 0.5, 5, anchor=CENTER);
     }
   }
@@ -117,8 +118,15 @@ translate([0, -center_height-10, -2*thickness-1]) herringbone_rack(length=PI*20,
 
 // Assembly guide
 translate([in_ring_r*2, in_ring_r*2, 0]) for (i = [0:planets-1]) {
-  rotate(i*360/planets) translate([planet_dist, 0, 0]) difference() {
+  angle = i*360/planets;
+  translate_polar(planet_dist, angle) difference() {
     cylinder(2, planet_connector_r+1, planet_connector_r+1);
-    translate([0, 0, 0.5]) rotate(-i*((ring_teeth/planets)*(360/planet_teeth))) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, backlash=-2*backlash, dedendum=0.5);
+    translate([0, 0, 0.5]) rotate(-i*((ring_teeth/planets)*(360/planet_teeth))+angle) scale([1.05, 1.05, 1]) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, dedendum=0.5, backlash=-0.5);
+    text3d(str(i+1), 2, anchor=CENTER);
   }
+}
+
+
+module translate_polar(d, a) {
+  translate([d*cos(a), d*sin(a), 0]) children();
 }
