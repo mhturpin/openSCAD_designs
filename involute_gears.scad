@@ -22,52 +22,19 @@ module gear(num_teeth=32,
   }
 }
 
-module herringbone_gear(num_teeth=32,
-                        pressure_angle=20,
-                        helix_angle=30,
-                        mod=1,
-                        thickness=1,
-                        hole_diameter=0,
-                        backlash=0,
-                        addendum=1,
-                        dedendum=1.25,
-                        reverse=false) {
-  direction = reverse ? 1 : -1;
-
-  translate([0, 0, thickness/2]) {
-    gear(num_teeth=num_teeth,
-         pressure_angle=pressure_angle,
-         helix_angle=direction*helix_angle,
-         mod=mod,
-         thickness=thickness/2,
-         hole_diameter=hole_diameter,
-         backlash=backlash,
-         addendum=addendum,
-         dedendum=dedendum);
-    mirror([0, 0, 1]) gear(num_teeth=num_teeth,
-                           pressure_angle=pressure_angle,
-                           helix_angle=direction*helix_angle,
-                           mod=mod,
-                           thickness=thickness/2,
-                           hole_diameter=hole_diameter,
-                           backlash=backlash,
-                           addendum=addendum,
-                           dedendum=dedendum);
-  }
-}
-
 module ring_gear(num_teeth=24,
                  ring_width=2,
                  pressure_angle=20,
                  mod=1,
                  thickness=1,
-                 backlash=0) {
+                 backlash=0,
+                 helix_angle=0) {
   ring_radius = pitch_radius(mod, num_teeth) + mod + ring_width;
   echo(str("Ring radius: ", ring_radius));
 
   difference() {
     cylinder(thickness, ring_radius, ring_radius);
-    translate([0, 0, -0.1]) gear(num_teeth=num_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness+0.2, backlash=-backlash, addendum=1.25, dedendum=1-0.2/mod);
+    translate([0, 0, -0.1]) gear(num_teeth=num_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness+0.2, backlash=-backlash, helix_angle=helix_angle, addendum=1.25, dedendum=1-0.2/mod);
   }
 }
 
@@ -83,19 +50,21 @@ module planetary_gear_set(sun_teeth=8,
                           sun_hole_diameter=0,
                           planet_hole_diameter=0,
                           backlash=0,
+                          helix_angle=0,
                           translate_sun=[0, 0, 0],
                           translate_planets=[0, 0, 0],
-                          ring_thickness_offset=0) {
+                          ring_thickness_offset=0,
+                          evenly_space_planets=false) {
   assert((ring_teeth - sun_teeth)%2 == 0, "Planet gears must have an integer number of teeth");
 
   planet_teeth = (ring_teeth - sun_teeth)/2;
 
   // Ring gear
-  translate([0, 0, ring_thickness_offset/2]) ring_gear(num_teeth=ring_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness-ring_thickness_offset, backlash=backlash);
+  translate([0, 0, ring_thickness_offset/2]) ring_gear(num_teeth=ring_teeth, ring_width=ring_width, pressure_angle=pressure_angle, mod=mod, thickness=thickness-ring_thickness_offset, backlash=backlash, helix_angle=helix_angle);
 
   // Sun gear
   sun_rotation = planet_teeth%2 == 0 ? 180/sun_teeth : 0;
-  translate(translate_sun) rotate(sun_rotation) gear(num_teeth=sun_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=sun_hole_diameter, backlash=backlash);
+  translate(translate_sun) rotate(sun_rotation) gear(num_teeth=sun_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=sun_hole_diameter, backlash=backlash, helix_angle=-helix_angle);
 
   // Planet gears
   dist = pitch_radius(mod, ring_teeth) - pitch_radius(mod, planet_teeth);
@@ -110,12 +79,76 @@ module planetary_gear_set(sun_teeth=8,
   assert(planet_od < planet_center_to_center, "Planet gears will interfere");
 
   translate(translate_planets) for (i = [0:num_planets-1]) {
-    location = round(i*spacing_number)/(sun_teeth + ring_teeth);
+    location = (evenly_space_planets ? i*spacing_number : round(i*spacing_number))/(sun_teeth + ring_teeth);
     // ring_teeth*location: number of teeth traveled
     // 360/planet_teeth: angle planet gear rotates for each tooth traveled
     rotation = (ring_teeth*location)*(360/planet_teeth);
 
-    rotate(location*360) translate([dist, 0, 0]) rotate(-rotation) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash);
+    rotate(location*360) translate([dist, 0, 0]) rotate(-rotation) gear(num_teeth=planet_teeth, pressure_angle=pressure_angle, mod=mod, thickness=thickness, hole_diameter=planet_hole_diameter, backlash=backlash, helix_angle=helix_angle);
+  }
+}
+
+module mirror_dupicate(thickness) {
+  children();
+  mirror([0, 0, 1]) children();
+}
+
+module herringbone_gear(num_teeth=32,
+                        pressure_angle=20,
+                        helix_angle=30,
+                        mod=1,
+                        thickness=1,
+                        hole_diameter=0,
+                        backlash=0,
+                        addendum=1,
+                        dedendum=1.25,
+                        reverse=false) {
+  direction = reverse ? 1 : -1;
+
+  translate([0, 0, thickness/2]) mirror_dupicate() {
+    gear(num_teeth=num_teeth,
+         pressure_angle=pressure_angle,
+         helix_angle=direction*helix_angle,
+         mod=mod,
+         thickness=thickness/2,
+         hole_diameter=hole_diameter,
+         backlash=backlash,
+         addendum=addendum,
+         dedendum=dedendum);
+  }
+}
+
+module herringbone_planetary_gear_set(sun_teeth=8,
+                                      ring_teeth=24,
+                                      ring_width=2,
+                                      num_planets=4,
+                                      pressure_angle=20,
+                                      mod=1,
+                                      thickness=1,
+                                      sun_hole_diameter=0,
+                                      planet_hole_diameter=0,
+                                      backlash=0,
+                                      helix_angle=30,
+                                      translate_sun=[0, 0, 0],
+                                      translate_planets=[0, 0, 0],
+                                      ring_thickness_offset=0,
+                                      evenly_space_planets=false) {
+  translate([0, 0, thickness/2]) mirror_dupicate() {
+    planetary_gear_set(sun_teeth=sun_teeth,
+                       ring_teeth=ring_teeth,
+                       ring_width=ring_width,
+                       num_planets=num_planets,
+                       pressure_angle=pressure_angle,
+                       mod=mod,
+                       thickness=thickness/2,
+                       sun_hole_diameter=sun_hole_diameter,
+                       planet_hole_diameter=planet_hole_diameter,
+                       backlash=backlash,
+                       helix_angle=helix_angle,
+                       translate_sun=translate_sun,
+                       translate_planets=translate_planets,
+                       ring_thickness_offset=ring_thickness_offset,
+                       evenly_space_planets=evenly_space_planets);
   }
 }
 
