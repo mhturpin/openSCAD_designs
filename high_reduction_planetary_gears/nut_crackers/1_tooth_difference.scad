@@ -73,8 +73,8 @@ union() {
 difference() {
   translate([-in_ring_r, -center_height, 0]) cube([in_ring_r*2, center_height, thickness+1]);
   translate([0, 0, -0.1]) cylinder(thickness+1.2, in_ring_r, in_ring_r);
-  translate([-in_ring_r+thickness/2, -center_height-0.1, thickness/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
-  translate([in_ring_r-thickness/2, -center_height-0.1, thickness/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
+  translate([-in_ring_r+thickness/2, -center_height-0.1, (thickness+1)/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
+  translate([in_ring_r-thickness/2, -center_height-0.1, (thickness+1)/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
 }
 
 // Retention ring
@@ -91,8 +91,8 @@ translate([0, 0, -thickness*3]) union() {
   translate([0, 0, -1]) difference() {
     translate([-in_ring_r, -center_height, 0]) cube([in_ring_r*2, center_height, thickness+1]);
     translate([0, 0, -0.1]) cylinder(thickness+1.2, in_ring_r, in_ring_r);
-    translate([-in_ring_r+thickness/2, -center_height-0.1, thickness/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
-    translate([in_ring_r-thickness/2, -center_height-0.1, thickness/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
+    translate([-in_ring_r+thickness/2, -center_height-0.1, (thickness+1)/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
+    translate([in_ring_r-thickness/2, -center_height-0.1, (thickness+1)/2]) rotate([-90, 0, 0]) cylinder(center_height, 1.75, 1.75);
   }
 
   // Retention ring
@@ -113,4 +113,4 @@ translate([0, 0, -2*thickness]) {
 }
 
 // Rack
-translate([0, -center_height-10, -2*thickness-1]) herringbone_rack(length=PI*20, width=thickness*2, base_thickness=rack_base, pressure_angle=pressure_angle, mod=out_mod, backlash=backlash, helix_angle=-helix_angle);
+translate([0, -center_height - 2*rack_base, -2*thickness]) herringbone_rack(length=PI*20, width=thickness*2, base_thickness=rack_base, pressure_angle=pressure_angle, mod=out_mod, backlash=backlash, helix_angle=-helix_angle);
