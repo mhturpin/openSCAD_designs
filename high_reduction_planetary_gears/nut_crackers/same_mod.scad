@@ -1,5 +1,5 @@
-use <../involute_gears.scad>
-include <../../libraries/BOSL2/std.scad>
+use <../../involute_gears.scad>
+include <../../../libraries/BOSL2/std.scad>
 
 $fn = $preview ? 50 : 200;
 
