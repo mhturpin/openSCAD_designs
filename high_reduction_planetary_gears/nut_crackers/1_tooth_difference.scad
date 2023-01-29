@@ -113,4 +113,4 @@ translate([0, 0, -2*thickness]) {
 }
 
 // Rack
-translate([0, -center_height - 2*rack_base, -2*thickness]) herringbone_rack(length=PI*20, width=thickness*2, base_thickness=rack_base, pressure_angle=pressure_angle, mod=out_mod, backlash=backlash, helix_angle=-helix_angle);
+translate([0, -center_height - 2*rack_base, -2*thickness]) herringbone_rack(length=PI*30, width=thickness*2, base_thickness=rack_base, pressure_angle=pressure_angle, mod=out_mod, backlash=backlash, helix_angle=-helix_angle);
