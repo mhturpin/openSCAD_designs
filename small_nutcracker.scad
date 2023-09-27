@@ -30,7 +30,7 @@ pivot_height = (center_pitch_radius + mod)/sqrt(2);
 handle_pivot_distance = center_pitch_radius + handle_pitch_radius;
 jaw_bolt_offset = pivot_radius + 1_inch/4 + 1;
 base_width = thickness + support_width;
-base_length = pivot_height + 3*1_inch + handle_pivot_distance + 1.5*support_width;
+base_length = pivot_height + 3*1_inch + support_width/2 + handle_pivot_distance + 1.5*support_width;
 
 
 module center_gear_piece() {
@@ -109,34 +109,29 @@ module handle_gear_mask() {
 }
 
 module base() {
+  // Two sides
   translate([0, 0, -support_width/2]) base_side();
   translate([0, 0, thickness]) base_side();
-  // TODO: connect the two sides
+  // Connect handle supports
   translate([handle_pivot_distance - support_width/2, -pivot_height, 0]) cube([2*support_width, support_width, thickness]);
-  
+
   // Stop with threaded hole
-  translate([-3*1_inch, 0, -support_width/2]) back_stop();
-    
-  
-  // TODO: bolt holes on the bottom
+  translate([-3*1_inch - support_width/2, 0, -support_width/2]) back_stop();
 }
 
 module base_side() {
   // Handle support
-  translate([handle_pivot_distance, 0, 0]) {
-    handle_support();
-  }
-  
+  translate([handle_pivot_distance, 0, 0]) handle_support();
+
   // Center gear support
   vertical_support();
-  
+
   // Center pivot brace
   difference() {
     center_pivot_brace();
     pivot_cylinder(support_width/2);
   }
-  
-  // TODO: connect bottom
+
   translate([0, -pivot_height, 0]) cube([handle_pivot_distance, support_width, support_width/2]);
 }
 
@@ -156,7 +151,7 @@ module handle_support() {
 
       translate([-support_width/2, 0, 0]) linear_extrude(support_width/2) polygon(support_points);
     }
-    
+
     // Remove the slot
     pivot_cylinder(support_width/2);
     translate([support_width, -support_width*sqrt(3), 0]) pivot_cylinder(support_width/2);
@@ -170,7 +165,7 @@ module vertical_support() {
       cylinder(support_width/2, support_width/2, support_width/2);
       translate([-support_width/2, -pivot_height, 0]) cube([support_width, pivot_height, support_width/2]);
     }
-    
+
     pivot_cylinder(support_width/2);
   }
 }
@@ -181,7 +176,7 @@ module center_pivot_brace() {
   // Distance to handle_support_corner from the center pivot
   handle_support_corner_distance = sqrt((handle_support_corner[0])^2 + (handle_support_corner[1])^2);
 
-  // Rectangle with middle of left side on the center of the center gear pivot and 
+  // Rectangle with middle of left side on the center of the center gear pivot and
   // bottom right corner on the handle_support_bottom_left point
   brace_length = sqrt(handle_support_corner_distance^2 - (support_width/2)^2);
 
@@ -202,16 +197,18 @@ module back_stop() {
         [-1_inch/2*(1 + 1/sqrt(2)), 1_inch/2*(1/sqrt(2) - 1)],
         [-1_inch/2, 0],
       ];
-      //translate([0, 0, -support_width/2]) 
       linear_extrude(base_width) polygon(stop_points);
-      
+
       translate([-pivot_height + 1_inch/2, -pivot_height + 1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
       translate([-1_inch/2, -1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
-      translate([0, -pivot_height, 0]) cube([3*1_inch + support_width/2, 1_inch, base_width]);
+      translate([0, -pivot_height, 0]) cube([3*1_inch, 1_inch, base_width]);
+      translate([3*1_inch, -pivot_height, support_width/2]) cube([support_width, 1_inch, thickness]);
     }
-  
+
     // Bolt hole (1/2 13)
     translate([-19, -jaw_bolt_offset, base_width/2]) rotate([0, 90, 0]) threaded_rod(1_inch/2 + 2*clearance, 40, 1_inch/13);
+
+    // TODO: bolt holes on the bottom
   }
 }
 
@@ -246,8 +243,8 @@ union() {
   base();
 }
 
+echo(base_length);
 echo(base_length/1_inch);
-
 
 
 
