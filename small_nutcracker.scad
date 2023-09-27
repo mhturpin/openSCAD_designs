@@ -17,7 +17,7 @@ handle_teeth = 8;
 center_gear_teeth = 56;
 pivot_radius = ((5/16)*1_inch + clearance)/2;
 handle_connecter_length = 30;
-support_width = pivot_radius*4;
+shift_gears = [0, 35, 0]; // For generating .stl
 
 // Calculated variables
 // Pitch diameter = module*teeth
@@ -25,12 +25,13 @@ handle_pitch_radius = mod*handle_teeth/2;
 handle_root_radius = handle_pitch_radius - 1.25*mod;
 center_pitch_radius = mod*center_gear_teeth/2;
 center_root_radius = center_pitch_radius - 1.25*mod;
-half_gear = thickness/2;
+support_width = pivot_radius*4;
 pivot_height = (center_pitch_radius + mod)/sqrt(2);
 handle_pivot_distance = center_pitch_radius + handle_pitch_radius;
 jaw_bolt_offset = pivot_radius + 1_inch/4 + 1;
+jaw_length = 2.5*1_inch;
 base_width = thickness + support_width;
-base_length = pivot_height + 2.5*1_inch + support_width/2 + handle_pivot_distance + 1.5*support_width;
+base_length = pivot_height + jaw_length + support_width/2 + handle_pivot_distance + 1.5*support_width;
 
 
 module center_gear_piece() {
@@ -116,7 +117,7 @@ module base() {
   translate([handle_pivot_distance - support_width/2, -pivot_height, 0]) cube([2*support_width, support_width, thickness]);
 
   // Stop with threaded hole
-  translate([-2.5*1_inch - support_width/2, 0, -support_width/2]) back_stop();
+  translate([-jaw_length - support_width/2, 0, -support_width/2]) back_stop();
 }
 
 module base_side() {
@@ -201,9 +202,17 @@ module back_stop() {
 
       translate([-pivot_height + 1_inch/2, -pivot_height + 1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
       translate([-1_inch/2, -1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
-      translate([0, -pivot_height, 0]) cube([2.5*1_inch, 1_inch, base_width]);
-      translate([2.5*1_inch, -pivot_height, support_width/2]) cube([support_width, 1_inch, thickness]);
+      translate([0, -pivot_height, 0]) cube([jaw_length, 1_inch, base_width]);
+      translate([jaw_length, -pivot_height, support_width/2]) cube([support_width, 1_inch, thickness]);
     }
+
+    // TODO: remove some mass
+    hole_points = [
+      [0, 0],
+      [0, 2*support_width - pivot_height],
+      [2*support_width - pivot_height, 2*support_width - pivot_height],
+    ];
+    translate([-support_width, -support_width, -1]) linear_extrude(base_width + 2) polygon(hole_points);
 
     // Bolt hole (1/2 13)
     translate([-19, -jaw_bolt_offset, base_width/2]) rotate([0, 90, 0]) threaded_rod(1_inch/2 + 2*clearance, 40, 1_inch/13);
@@ -237,16 +246,15 @@ module hexagon(width) {
   polygon([[x, y], [2*x, 0], [x, -y], [-x, -y], [-2*x, 0], [-x, y]]);
 }
 
-union() {
-  center_gear_piece();
-  translate([center_pitch_radius + handle_pitch_radius, 0, 0]) handle_piece();
-  base();
-}
+translate(shift_gears) center_gear_piece();
+translate(shift_gears) translate([center_pitch_radius + handle_pitch_radius, 0, 0]) handle_piece();
+base();
+
 
 echo(base_length);
 echo(base_length/1_inch);
 
-
+*back_stop();
 
 
 
