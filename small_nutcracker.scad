@@ -30,7 +30,7 @@ pivot_height = (center_pitch_radius + mod)/sqrt(2);
 handle_pivot_distance = center_pitch_radius + handle_pitch_radius;
 jaw_bolt_offset = pivot_radius + 1_inch/4 + 1;
 base_width = thickness + support_width;
-base_length = pivot_height + 3*1_inch + support_width/2 + handle_pivot_distance + 1.5*support_width;
+base_length = pivot_height + 2.5*1_inch + support_width/2 + handle_pivot_distance + 1.5*support_width;
 
 
 module center_gear_piece() {
@@ -116,7 +116,7 @@ module base() {
   translate([handle_pivot_distance - support_width/2, -pivot_height, 0]) cube([2*support_width, support_width, thickness]);
 
   // Stop with threaded hole
-  translate([-3*1_inch - support_width/2, 0, -support_width/2]) back_stop();
+  translate([-2.5*1_inch - support_width/2, 0, -support_width/2]) back_stop();
 }
 
 module base_side() {
@@ -201,8 +201,8 @@ module back_stop() {
 
       translate([-pivot_height + 1_inch/2, -pivot_height + 1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
       translate([-1_inch/2, -1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
-      translate([0, -pivot_height, 0]) cube([3*1_inch, 1_inch, base_width]);
-      translate([3*1_inch, -pivot_height, support_width/2]) cube([support_width, 1_inch, thickness]);
+      translate([0, -pivot_height, 0]) cube([2.5*1_inch, 1_inch, base_width]);
+      translate([2.5*1_inch, -pivot_height, support_width/2]) cube([support_width, 1_inch, thickness]);
     }
 
     // Bolt hole (1/2 13)
