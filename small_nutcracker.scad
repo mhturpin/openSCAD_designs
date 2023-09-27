@@ -3,9 +3,9 @@ include <../libraries/BOSL2/threading.scad>
 use <involute_gears.scad>
 
 $fn = $preview ? 20 : 200;
-$vpd = 500;
+$vpd = 700;
 $vpr = [0, 0, 0];
-$vpt = [40, -10, 0];
+$vpt = [0, -10, 0];
 
 // Parameters
 1_inch = 25.4;
@@ -28,7 +28,10 @@ center_root_radius = center_pitch_radius - 1.25*mod;
 half_gear = thickness/2;
 pivot_height = (center_pitch_radius + mod)/sqrt(2);
 handle_pivot_distance = center_pitch_radius + handle_pitch_radius;
-base_length = 3*pivot_radius + center_pitch_radius + handle_pitch_radius;
+jaw_bolt_offset = pivot_radius + 1_inch/4 + 1;
+base_width = thickness + support_width;
+base_length = pivot_height + 3*1_inch + handle_pivot_distance + 1.5*support_width;
+
 
 module center_gear_piece() {
   difference() {
@@ -64,7 +67,7 @@ module center_gear_piece() {
     pivot_cylinder(thickness);
 
     // Jaw bolt hole (1/2 13)
-    translate([1_inch/2 - pivot_radius*2 - 0.01, -pivot_radius - 1_inch/4 - 1, thickness/2]) rotate([0, 90, 0]) threaded_rod(1_inch/2 + 2*clearance, 1_inch, 1_inch/13);
+    translate([1_inch/2 - pivot_radius*2 - 0.01, -jaw_bolt_offset, thickness/2]) rotate([0, 90, 0]) threaded_rod(1_inch/2 + 2*clearance, 1_inch, 1_inch/13);
   }
 }
 
@@ -109,10 +112,13 @@ module base() {
   translate([0, 0, -support_width/2]) base_side();
   translate([0, 0, thickness]) base_side();
   // TODO: connect the two sides
-  
+  translate([handle_pivot_distance - support_width/2, -pivot_height, 0]) cube([2*support_width, support_width, thickness]);
   
   // Stop with threaded hole
-  back_stop();
+  translate([-3*1_inch, 0, -support_width/2]) back_stop();
+    
+  
+  // TODO: bolt holes on the bottom
 }
 
 module base_side() {
@@ -129,6 +135,9 @@ module base_side() {
     center_pivot_brace();
     pivot_cylinder(support_width/2);
   }
+  
+  // TODO: connect bottom
+  translate([0, -pivot_height, 0]) cube([handle_pivot_distance, support_width, support_width/2]);
 }
 
 module handle_support() {
@@ -182,12 +191,28 @@ module center_pivot_brace() {
 }
 
 module back_stop() {
-  stop_points = [
-    [0, 0],
-    [0, -pivot_height],
-    [-thickness, -pivot_height],
-  ];
-  translate([0, 0, -support_width/2]) linear_extrude(thickness + support_width) polygon(stop_points);
+  difference() {
+    union() {
+      stop_points = [
+        [0, 0],
+        [0, -pivot_height],
+        [-pivot_height, -pivot_height],
+        [-pivot_height, -pivot_height + 1_inch/2],
+        [-pivot_height + 1_inch/2*(1 - 1/sqrt(2)), -pivot_height + 1_inch/2*(1 + 1/sqrt(2))],
+        [-1_inch/2*(1 + 1/sqrt(2)), 1_inch/2*(1/sqrt(2) - 1)],
+        [-1_inch/2, 0],
+      ];
+      //translate([0, 0, -support_width/2]) 
+      linear_extrude(base_width) polygon(stop_points);
+      
+      translate([-pivot_height + 1_inch/2, -pivot_height + 1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
+      translate([-1_inch/2, -1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
+      translate([0, -pivot_height, 0]) cube([3*1_inch + support_width/2, 1_inch, base_width]);
+    }
+  
+    // Bolt hole (1/2 13)
+    translate([-19, -jaw_bolt_offset, base_width/2]) rotate([0, 90, 0]) threaded_rod(1_inch/2 + 2*clearance, 40, 1_inch/13);
+  }
 }
 
 module pivot_cylinder(height) {
@@ -221,10 +246,7 @@ union() {
   base();
 }
 
-
-
-
-
+echo(base_length/1_inch);
 
 
 
