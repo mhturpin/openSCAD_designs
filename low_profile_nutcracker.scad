@@ -25,14 +25,17 @@ handle_root_radius = handle_pitch_radius - 1.25*mod;
 center_pitch_radius = mod*center_gear_teeth/2;
 center_root_radius = center_pitch_radius - 1.25*mod;
 support_width = pivot_radius*4;
+support_thickness = support_width/2;
+round_radius = support_width/2;
 pivot_height = (center_pitch_radius + mod)/sqrt(2);
 handle_pivot_distance = center_pitch_radius + handle_pitch_radius;
 track_width = mod*2; // 2*mod to get the teeth to disengage exactly, downward displacement adds clearance
 handle_support_width = track_width + support_width;
 jaw_bolt_offset = pivot_radius + 1_inch/4 + 1;
-jaw_length = 2.5*1_inch;
+mouth_length = 2.5*1_inch;
+rear_jaw_length = pivot_height/sqrt(3);
 base_width = thickness + support_width;
-base_length = pivot_height + jaw_length + support_width/2 + handle_pivot_distance + 1.5*support_width;
+base_length = rear_jaw_length + mouth_length + support_width/2 + handle_pivot_distance + track_width + support_width/2;
 
 
 module center_gear_piece() {
@@ -112,17 +115,17 @@ module handle_gear_mask() {
 
 module base() {
   // Two sides
-  translate([0, 0, -support_width/2]) base_side();
+  translate([0, 0, -support_thickness]) base_side();
   translate([0, 0, thickness]) base_side();
 
   // Connect handle supports
   translate([handle_pivot_distance - support_width/2, -pivot_height, 0]) difference() {
-    translate([0, 0, -support_width/2]) cube([handle_support_width, 1_inch, base_width]);
+    translate([0, 0, -support_thickness]) cube([handle_support_width, 1_inch, base_width]);
     translate([handle_support_width/2, (1_inch - 5)/2, thickness/2]) rotate([90, 0, 0]) quarter_twenty_rod(1_inch - 4.9);
   }
 
   // Stop with threaded hole
-  translate([-jaw_length - support_width/2, 0, -support_width/2]) back_stop();
+  translate([-mouth_length - support_width/2, 0, -support_thickness]) back_stop();
 }
 
 module base_side() {
@@ -135,17 +138,17 @@ module base_side() {
   // Center pivot brace
   difference() {
     center_pivot_brace();
-    pivot_cylinder(support_width/2);
+    pivot_cylinder(support_thickness);
   }
 
-  translate([0, -pivot_height, 0]) cube([handle_pivot_distance, support_width, support_width/2]);
+  translate([0, -pivot_height, 0]) cube([handle_pivot_distance, support_width, support_thickness]);
 }
 
 module handle_support() {
   difference() {
     union() {
-      cylinder(support_width/2, support_width/2, support_width/2);
-      translate([track_width, -track_width*sqrt(3), 0]) cylinder(support_width/2, support_width/2, support_width/2);
+      cylinder(support_thickness, round_radius, round_radius);
+      translate([track_width, -track_width*sqrt(3), 0]) cylinder(support_thickness, round_radius, round_radius);
       support_points = [
         [0, 0],
         [0, -pivot_height],
@@ -155,24 +158,24 @@ module handle_support() {
         [support_width*(.5 + cos(30)/2), support_width*(sin(30)/2)]
       ];
 
-      translate([-support_width/2, 0, 0]) linear_extrude(support_width/2) polygon(support_points);
+      translate([-support_width/2, 0, 0]) linear_extrude(support_thickness) polygon(support_points);
     }
 
     // Remove the slot
-    pivot_cylinder(support_width/2);
-    translate([track_width, -track_width*sqrt(3), 0]) pivot_cylinder(support_width/2);
-    rotate(-60) translate([0, -support_width/4, -1]) cube([2*track_width, 2*pivot_radius, support_width/2 + 2]);
+    pivot_cylinder(support_thickness);
+    translate([track_width, -track_width*sqrt(3), 0]) pivot_cylinder(support_thickness);
+    rotate(-60) translate([0, -support_width/4, -1]) cube([2*track_width, 2*pivot_radius, support_thickness + 2]);
   }
 }
 
 module vertical_support() {
   difference() {
     union() {
-      cylinder(support_width/2, support_width/2, support_width/2);
-      translate([-support_width/2, -pivot_height, 0]) cube([support_width, pivot_height, support_width/2]);
+      cylinder(support_thickness, round_radius, round_radius);
+      translate([-support_width/2, -pivot_height, 0]) cube([support_width, pivot_height, support_thickness]);
     }
 
-    pivot_cylinder(support_width/2);
+    pivot_cylinder(support_thickness);
   }
 }
 
@@ -188,42 +191,33 @@ module center_pivot_brace() {
 
   handle_support_corner_angle = abs(atan(handle_support_corner[0]/handle_support_corner[1]));
   brace_angle = 90 - (asin(support_width/2/handle_support_corner_distance) + handle_support_corner_angle);
-  rotate(-brace_angle) translate([0, -support_width/2, 0]) cube([brace_length, support_width, support_width/2]);
+  rotate(-brace_angle) translate([0, -support_width/2, 0]) cube([brace_length, support_width, support_thickness]);
 }
 
 module back_stop() {
   difference() {
     union() {
       stop_points = [
-        [0, 0],
+        [0, -round_radius],
         [0, -pivot_height],
-        [-pivot_height, -pivot_height],
-        [-pivot_height, -pivot_height + 1_inch/2],
-        [-pivot_height + 1_inch/2*(1 - 1/sqrt(2)), -pivot_height + 1_inch/2*(1 + 1/sqrt(2))],
-        [-1_inch/2*(1 + 1/sqrt(2)), 1_inch/2*(1/sqrt(2) - 1)],
-        [-1_inch/2, 0],
+        [-rear_jaw_length, -pivot_height],
+        [-rear_jaw_length, -pivot_height + round_radius],
+        [round_radius*(1 - cos(30)) - rear_jaw_length, round_radius*(1 + sin(30)) - pivot_height],
+        [-round_radius*(1 + cos(30)), -round_radius*sin(30)],
       ];
       linear_extrude(base_width) polygon(stop_points);
 
-      translate([-pivot_height + 1_inch/2, -pivot_height + 1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
-      translate([-1_inch/2, -1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
-      translate([0, -pivot_height, 0]) cube([jaw_length + support_width, 1_inch, base_width]);
+      translate([round_radius - rear_jaw_length, round_radius - pivot_height, 0]) cylinder(thickness + support_width, round_radius, round_radius);
+      translate([-round_radius, -round_radius, 0]) cylinder(thickness + support_width, round_radius, round_radius);
+      translate([0, -pivot_height, 0]) cube([mouth_length + support_width, 1_inch, base_width]);
     }
-
-    // Remove some mass
-    hole_points = [
-      [0, 0],
-      [0, 2*support_width - pivot_height],
-      [2*support_width - pivot_height, 2*support_width - pivot_height],
-    ];
-    translate([-support_width, -support_width, -1]) linear_extrude(base_width + 2) polygon(hole_points);
 
     // Jaw bolt hole (1/2 13)
     translate([-19, -jaw_bolt_offset, base_width/2]) rotate([0, 90, 0]) threaded_rod(1_inch/2 + 2*clearance, 40, 1_inch/13);
 
     // Bolt holes to anchor
-    translate([base_width/2 - pivot_height, (support_width - 5)/2 - pivot_height, base_width/2]) rotate([90, 0, 0]) quarter_twenty_rod(support_width - 4.9);
-    translate([jaw_length + support_width - base_width/2, (1_inch - 5)/2 - pivot_height, base_width/2]) rotate([90, 0, 0]) quarter_twenty_rod(1_inch - 4.9);
+    translate([base_width/2 - rear_jaw_length, (support_width - 5)/2 - pivot_height, base_width/2]) rotate([90, 0, 0]) quarter_twenty_rod(support_width - 4.9);
+    translate([mouth_length + support_width - base_width/2, (1_inch - 5)/2 - pivot_height, base_width/2]) rotate([90, 0, 0]) quarter_twenty_rod(1_inch - 4.9);
   }
 }
 
