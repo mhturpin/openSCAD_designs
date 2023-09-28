@@ -17,17 +17,18 @@ handle_teeth = 8;
 center_gear_teeth = 56;
 pivot_radius = ((5/16)*1_inch + clearance)/2;
 handle_connecter_length = 30;
-shift_gears = [0, 35, 0]; // For generating .stl
+shift_gears = [0, 0, 0]; // For generating .stl
 
 // Calculated variables
-// Pitch diameter = module*teeth
-handle_pitch_radius = mod*handle_teeth/2;
+handle_pitch_radius = mod*handle_teeth/2; // Pitch diameter = mod*teeth
 handle_root_radius = handle_pitch_radius - 1.25*mod;
 center_pitch_radius = mod*center_gear_teeth/2;
 center_root_radius = center_pitch_radius - 1.25*mod;
 support_width = pivot_radius*4;
 pivot_height = (center_pitch_radius + mod)/sqrt(2);
 handle_pivot_distance = center_pitch_radius + handle_pitch_radius;
+track_width = mod*2; // 2*mod to get the teeth to disengage exactly, downward displacement adds clearance
+handle_support_width = track_width + support_width;
 jaw_bolt_offset = pivot_radius + 1_inch/4 + 1;
 jaw_length = 2.5*1_inch;
 base_width = thickness + support_width;
@@ -113,11 +114,11 @@ module base() {
   // Two sides
   translate([0, 0, -support_width/2]) base_side();
   translate([0, 0, thickness]) base_side();
-  
+
   // Connect handle supports
   translate([handle_pivot_distance - support_width/2, -pivot_height, 0]) difference() {
-    cube([2*support_width, support_width, thickness]);
-    translate([support_width, (support_width - 5)/2, thickness/2]) rotate([90, 0, 0]) quarter_twenty_rod(support_width - 4.9);
+    translate([0, 0, -support_width/2]) cube([handle_support_width, 1_inch, base_width]);
+    translate([handle_support_width/2, (1_inch - 5)/2, thickness/2]) rotate([90, 0, 0]) quarter_twenty_rod(1_inch - 4.9);
   }
 
   // Stop with threaded hole
@@ -144,13 +145,13 @@ module handle_support() {
   difference() {
     union() {
       cylinder(support_width/2, support_width/2, support_width/2);
-      translate([support_width, -support_width*sqrt(3), 0]) cylinder(support_width/2, support_width/2, support_width/2);
+      translate([track_width, -track_width*sqrt(3), 0]) cylinder(support_width/2, support_width/2, support_width/2);
       support_points = [
         [0, 0],
         [0, -pivot_height],
-        [2*support_width, -pivot_height],
-        [2*support_width, -support_width*sqrt(3)],
-        [support_width*(1.5 + cos(30)/2), support_width*(sin(30)/2 - sqrt(3))],
+        [handle_support_width, -pivot_height],
+        [handle_support_width, -track_width*sqrt(3)],
+        [support_width*(1 + cos(30))/2 + track_width, support_width*sin(30)/2 - track_width*sqrt(3)],
         [support_width*(.5 + cos(30)/2), support_width*(sin(30)/2)]
       ];
 
@@ -159,8 +160,8 @@ module handle_support() {
 
     // Remove the slot
     pivot_cylinder(support_width/2);
-    translate([support_width, -support_width*sqrt(3), 0]) pivot_cylinder(support_width/2);
-    rotate(-60) translate([0, -support_width/4, -1]) cube([2*support_width, 2*pivot_radius, support_width/2 + 2]);
+    translate([track_width, -track_width*sqrt(3), 0]) pivot_cylinder(support_width/2);
+    rotate(-60) translate([0, -support_width/4, -1]) cube([2*track_width, 2*pivot_radius, support_width/2 + 2]);
   }
 }
 
@@ -219,7 +220,7 @@ module back_stop() {
 
     // Jaw bolt hole (1/2 13)
     translate([-19, -jaw_bolt_offset, base_width/2]) rotate([0, 90, 0]) threaded_rod(1_inch/2 + 2*clearance, 40, 1_inch/13);
-    
+
     // Bolt holes to anchor
     translate([base_width/2 - pivot_height, (support_width - 5)/2 - pivot_height, base_width/2]) rotate([90, 0, 0]) quarter_twenty_rod(support_width - 4.9);
     translate([jaw_length + support_width - base_width/2, (1_inch - 5)/2 - pivot_height, base_width/2]) rotate([90, 0, 0]) quarter_twenty_rod(1_inch - 4.9);
@@ -249,9 +250,10 @@ module quarter_twenty_rod(length) {
   threaded_rod(1_inch/4 + 2*clearance, length, 1_inch/20);
 }
 
+translate([track_width, -track_width*sqrt(3), 0]) translate(shift_gears) translate([center_pitch_radius + handle_pitch_radius, 0, 0]) handle_piece();
 translate(shift_gears) center_gear_piece();
-translate(shift_gears) translate([center_pitch_radius + handle_pitch_radius, 0, 0]) handle_piece();
 base();
 
+echo(base_width);
 echo(base_length);
 echo(base_length/1_inch);
