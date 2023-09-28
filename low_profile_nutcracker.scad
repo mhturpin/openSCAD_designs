@@ -17,7 +17,7 @@ handle_teeth = 8;
 center_gear_teeth = 56;
 pivot_radius = ((5/16)*1_inch + clearance)/2;
 handle_connecter_length = 30;
-shift_gears = [0, 0, 0]; // For generating .stl
+shift_gears = [0, 35, 0]; // For generating .stl
 
 // Calculated variables
 handle_pitch_radius = mod*handle_teeth/2; // Pitch diameter = mod*teeth
@@ -33,8 +33,8 @@ track_width = mod*2; // 2*mod to get the teeth to disengage exactly, downward di
 handle_support_width = track_width + support_width;
 jaw_bolt_offset = pivot_radius + 1_inch/4 + 1;
 mouth_length = 2.5*1_inch;
-rear_jaw_length = pivot_height/sqrt(3);
-base_width = thickness + support_width;
+rear_jaw_length = (pivot_height + round_radius)/sqrt(3);
+base_width = thickness + 2*support_thickness;
 base_length = rear_jaw_length + mouth_length + support_width/2 + handle_pivot_distance + track_width + support_width/2;
 
 
@@ -195,20 +195,22 @@ module center_pivot_brace() {
 }
 
 module back_stop() {
+  // TODO: make a little taller to match other supports
+
   difference() {
     union() {
       stop_points = [
-        [0, -round_radius],
+        [0, 0],
         [0, -pivot_height],
         [-rear_jaw_length, -pivot_height],
         [-rear_jaw_length, -pivot_height + round_radius],
         [round_radius*(1 - cos(30)) - rear_jaw_length, round_radius*(1 + sin(30)) - pivot_height],
-        [-round_radius*(1 + cos(30)), -round_radius*sin(30)],
+        [-round_radius*(1 + cos(30)), round_radius*sin(30)],
       ];
       linear_extrude(base_width) polygon(stop_points);
 
-      translate([round_radius - rear_jaw_length, round_radius - pivot_height, 0]) cylinder(thickness + support_width, round_radius, round_radius);
-      translate([-round_radius, -round_radius, 0]) cylinder(thickness + support_width, round_radius, round_radius);
+      translate([round_radius - rear_jaw_length, round_radius - pivot_height, 0]) cylinder(thickness + 2*support_thickness, round_radius, round_radius);
+      translate([-round_radius, 0, 0]) cylinder(thickness + 2*support_thickness, round_radius, round_radius);
       translate([0, -pivot_height, 0]) cube([mouth_length + support_width, 1_inch, base_width]);
     }
 
@@ -244,10 +246,11 @@ module quarter_twenty_rod(length) {
   threaded_rod(1_inch/4 + 2*clearance, length, 1_inch/20);
 }
 
-translate([track_width, -track_width*sqrt(3), 0]) translate(shift_gears) translate([center_pitch_radius + handle_pitch_radius, 0, 0]) handle_piece();
+translate(shift_gears) translate([track_width, -track_width*sqrt(3), 0]) translate([center_pitch_radius + handle_pitch_radius, 0, 0]) handle_piece();
 translate(shift_gears) center_gear_piece();
 base();
 
-echo(base_width);
-echo(base_length);
-echo(base_length/1_inch);
+echo(str("Base width (mm): ", base_width));
+echo(str("Base width (in): ", base_width/1_inch));
+echo(str("Base length (mm): ", base_length));
+echo(str("Base length (in): ", base_length/1_inch));
