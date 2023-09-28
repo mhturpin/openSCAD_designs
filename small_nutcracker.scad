@@ -90,7 +90,7 @@ module handle_piece() {
 
         // Hole for handle connection (1/4 20 threaded rod)
         // Outer diameter, length, thread width (length/# threads)
-        translate([0, 0, handle_connecter_length/2]) threaded_rod(1_inch/4 + 2*clearance, handle_connecter_length + 0.1, 1_inch/20);
+        translate([0, 0, handle_connecter_length/2]) quarter_twenty_rod(handle_connecter_length + 0.1);
       }
 
       // Connect gear to tapered section
@@ -113,8 +113,12 @@ module base() {
   // Two sides
   translate([0, 0, -support_width/2]) base_side();
   translate([0, 0, thickness]) base_side();
+  
   // Connect handle supports
-  translate([handle_pivot_distance - support_width/2, -pivot_height, 0]) cube([2*support_width, support_width, thickness]);
+  translate([handle_pivot_distance - support_width/2, -pivot_height, 0]) difference() {
+    cube([2*support_width, support_width, thickness]);
+    translate([support_width, (support_width - 5)/2, thickness/2]) rotate([90, 0, 0]) quarter_twenty_rod(support_width - 4.9);
+  }
 
   // Stop with threaded hole
   translate([-jaw_length - support_width/2, 0, -support_width/2]) back_stop();
@@ -202,11 +206,10 @@ module back_stop() {
 
       translate([-pivot_height + 1_inch/2, -pivot_height + 1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
       translate([-1_inch/2, -1_inch/2, 0]) cylinder(thickness + support_width, 1_inch/2, 1_inch/2);
-      translate([0, -pivot_height, 0]) cube([jaw_length, 1_inch, base_width]);
-      translate([jaw_length, -pivot_height, support_width/2]) cube([support_width, 1_inch, thickness]);
+      translate([0, -pivot_height, 0]) cube([jaw_length + support_width, 1_inch, base_width]);
     }
 
-    // TODO: remove some mass
+    // Remove some mass
     hole_points = [
       [0, 0],
       [0, 2*support_width - pivot_height],
@@ -214,10 +217,12 @@ module back_stop() {
     ];
     translate([-support_width, -support_width, -1]) linear_extrude(base_width + 2) polygon(hole_points);
 
-    // Bolt hole (1/2 13)
+    // Jaw bolt hole (1/2 13)
     translate([-19, -jaw_bolt_offset, base_width/2]) rotate([0, 90, 0]) threaded_rod(1_inch/2 + 2*clearance, 40, 1_inch/13);
-
-    // TODO: bolt holes on the bottom
+    
+    // Bolt holes to anchor
+    translate([base_width/2 - pivot_height, (support_width - 5)/2 - pivot_height, base_width/2]) rotate([90, 0, 0]) quarter_twenty_rod(support_width - 4.9);
+    translate([jaw_length + support_width - base_width/2, (1_inch - 5)/2 - pivot_height, base_width/2]) rotate([90, 0, 0]) quarter_twenty_rod(1_inch - 4.9);
   }
 }
 
@@ -240,30 +245,13 @@ module part_cylinder(r, angle, height, center=false) {
   }
 }
 
-module hexagon(width) {
-  x = width/2/sqrt(3);
-  y = width/2;
-  polygon([[x, y], [2*x, 0], [x, -y], [-x, -y], [-2*x, 0], [-x, y]]);
+module quarter_twenty_rod(length) {
+  threaded_rod(1_inch/4 + 2*clearance, length, 1_inch/20);
 }
 
 translate(shift_gears) center_gear_piece();
 translate(shift_gears) translate([center_pitch_radius + handle_pitch_radius, 0, 0]) handle_piece();
 base();
 
-
 echo(base_length);
 echo(base_length/1_inch);
-
-*back_stop();
-
-
-
-
-
-
-
-
-
-
-
-
