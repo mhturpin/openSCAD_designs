@@ -184,12 +184,12 @@ module rack(length=PI*20,
                  [0, 0, 1, 0],
                  [0, 0, 0, 1]];
 
-  translate([-length/2, 0, 0]) intersection() {
+  intersection() {
     translate([-additional_length, 0, 0]) multmatrix(skew_matrix) {
       cube([initial_length, base_thickness, width]);
 
       for (i = [0:num_teeth]) {
-        translate([circular_pitch*i, base_thickness, 0]) linear_extrude(width) polygon(tooth_points);
+        translate([circular_pitch*(i + 0.5), base_thickness, 0]) linear_extrude(width) polygon(tooth_points);
       }
     }
 
