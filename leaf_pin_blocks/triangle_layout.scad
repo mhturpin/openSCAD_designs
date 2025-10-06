@@ -2,13 +2,14 @@ $fn = $preview ? 50 : 200;
 step = $preview ? 10 : 2;
 
 block_size = 30;
+pin_height = 3;
 pin_spacing = 3;
 pin_radius = 0.5;
 x_pins = block_size/(pin_spacing*sqrt(3)/2) - 1;
 y_pins = block_size/pin_spacing - 1;
 
 difference() {
-  cube(block_size);
+  cube([block_size, block_size, pin_height]);
 
   for (i = [1:x_pins]) {
     y_offset = i%2 == 0 ? pin_spacing/2 : 0;
