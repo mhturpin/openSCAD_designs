@@ -16,7 +16,7 @@ module pin_holder() {
     // Body
     difference() {
       cylinder(pin_height, disk_radius + extra_radius, disk_radius + extra_radius);
-      translate([0, 0, -0.5]) cylinder(3, disk_radius + extra_radius/2 + 0.1, disk_radius + extra_radius/2 + 0.1);
+      translate([0, 0, -0.1]) cylinder(2.6, disk_radius + extra_radius/2 + 0.1, disk_radius + extra_radius/2 + 0.1);
     }
 
     // Pin holes
@@ -40,7 +40,6 @@ module pin_holder() {
       rotate(i*90) translate([disk_radius + extra_radius/2, 0, 4]) cylinder(pin_height, screw_radius, screw_radius);
     }
   }
-  
 }
 
 module pin_hole() {
@@ -50,11 +49,11 @@ module pin_hole() {
 module base() {
   // Base
   cylinder(cap_thickness, disk_radius + extra_radius, disk_radius + extra_radius);
-  
+
   // Centering ring
   difference() {
-    cylinder(cap_thickness + 2, disk_radius + extra_radius/2, disk_radius + extra_radius/2);
-    cylinder(cap_thickness + 3, disk_radius + 0.2, disk_radius + 0.2);
+    cylinder(cap_thickness + 3, disk_radius + extra_radius/2, disk_radius + extra_radius/2);
+    translate([0, 0, cap_thickness + 2]) cylinder(1.1, disk_radius + 0.2, disk_radius + 0.2);
   }
 }
 
