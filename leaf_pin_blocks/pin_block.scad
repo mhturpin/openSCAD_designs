@@ -3,12 +3,13 @@ step = $preview ? 10 : 2;
 
 disk_radius = 5/16*25.4;
 pin_height = 13.7;
+pin_head_height = 0.8;
 pin_spacing = 3;
 pin_radius = 0.6;
 extra_radius = 10;
 screw_radius = 1.8;
-screw_head_radius = 6;
-screw_head_height = 4;
+screw_head_radius = 4.5;
+screw_head_height = 5;
 cap_thickness = 5;
 
 module pin_holder() {
@@ -75,6 +76,9 @@ module top() {
         cylinder(screw_head_height, screw_head_radius, screw_radius);
       }
     }
+    
+    // Recess for pin heads
+    translate([0, 0, cap_thickness - pin_head_height]) cylinder(pin_head_height + 0.1, disk_radius + 0.2, disk_radius + 0.2);
   }
 }
 
