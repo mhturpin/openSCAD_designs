@@ -8,8 +8,8 @@ pin_spacing = 3;
 pin_radius = 0.6;
 extra_radius = 10;
 screw_radius = 1.8;
-screw_head_radius = 4.5;
-screw_head_height = 5;
+screw_head_radius = 4.25;
+screw_head_height = 3.5;
 cap_thickness = 5;
 
 module pin_holder() {
@@ -72,8 +72,12 @@ module top() {
     // Holes for screws
     for (i = [0:3]) {
       rotate(i*90) translate([disk_radius + extra_radius/2, 0, -0.1]) {
-        cylinder(cap_thickness + 2, screw_radius, screw_radius);
+        // Relief for the flare
+        cylinder(1, screw_head_radius, screw_head_radius);
+        // Tapered part of the head
         cylinder(screw_head_height, screw_head_radius, screw_radius);
+        // Shaft
+        cylinder(cap_thickness + 2, screw_radius, screw_radius);
       }
     }
     
