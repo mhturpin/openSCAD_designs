@@ -8,13 +8,12 @@ $vpt = [90, 0, 40];
 
 // Figure out rail length and total length based on linkage size
 // Figure out handle pivot hight discrepency
-// Add linkages from handle to jaw
 
 
 
 length = 200;
-width = 40;
 thickness = 20;
+width = thickness*2;
 linkage_length = 40;
 linkage_height = thickness*2;
 1_inch = 25.4;
@@ -26,7 +25,7 @@ handle_gear_teeth = 24;
 handle_pitch_radius = handle_gear_teeth*mod/2;
 handle_pitch_height = linkage_height - handle_pitch_radius;
 handle_pivot_height_above_rack = handle_pitch_radius + 1.25*mod;
-rack_teeth = 25;
+rack_teeth = 22;
 rack_length = PI*mod*rack_teeth;
 rack_angle = asin((handle_pitch_height - mod*1.25 - thickness)/(rack_length/2));
 rack_horizontal_length = cos(rack_angle)*rack_length;
@@ -50,9 +49,8 @@ module base() {
       // Rails for handle
       handle_rail();
       translate([0, 0, 0.75*width]) handle_rail();
-      
     }
-    
+
     // Rack angled platform
     rotate([-90, 0, 0]) linear_extrude(width) polygon([[0, 0], [0, rack_vertical_length], [-rack_horizontal_length, rack_vertical_length]]);
   }
@@ -77,22 +75,22 @@ module handle_rail() {
 }
 
 module moving_jaw() {
-  difference() {
-    union() {
-      rotate([0, 90, 0]) cylinder(thickness, thickness/2, thickness/2);
-
-      translate([thickness, 0, 0]) intersection() {
-        rotate([0, 90, 0]) cylinder(thickness/2, thickness/2, thickness/2);
-        rotate([90, 0, 0]) translate([0, 0, -thickness/2]) cylinder(thickness, thickness/2, thickness/2);
-      }
+  rotate([0, 90, 0]) difference() {
+    hull() {
+      // Tapered part
+      #cylinder(thickness, thickness*0.75, thickness/2);
+      // Rounded back
+      translate([0, thickness/2, thickness]) rotate([90, 0, 0]) cylinder(thickness, thickness/2, thickness/2);
     }
 
     // Flats for attaching the linkage
-    translate([thickness/2, thickness/4, -thickness/2]) cube(thickness + 1);
-    translate([thickness/2, -1.25*thickness - 1, -thickness/2]) cube(thickness + 1);
+    translate([-thickness, 0, thickness/2]) {
+      translate([0, thickness/2, 0]) cube(2*thickness);
+      translate([0, -2.5*thickness, 0]) cube(2*thickness);
+    }
 
     // Hole for the linkage pin
-    translate([thickness, thickness/2, 0]) rotate([90, 0, 0]) cylinder(thickness, pivot_radius, pivot_radius);
+    translate([0, thickness/2 + 1, thickness]) rotate([90, 0, 0]) cylinder(thickness + 2, pivot_radius, pivot_radius);
   }
 }
 
@@ -102,10 +100,10 @@ module handle() {
       // Long bar
       rotate([0, 0, 15]) translate([0, -thickness/2, 0]) cube([length, thickness, thickness]);
       // Linkage part
-      translate([0, -thickness/2, 0]) cube([1.5*linkage_length, thickness, thickness]);
+      translate([0, -thickness/2, 0]) cube([rack_length, thickness, thickness]);
       // Rounded ends
       cylinder(thickness, thickness/2, thickness/2);
-      translate([1.5*linkage_length, 0, 0]) cylinder(thickness, thickness/2, thickness/2);
+      translate([rack_length, 0, 0]) cylinder(thickness, thickness/2, thickness/2);
       // Teeth
       gear_section_angle = 360*6.5/handle_gear_teeth;
       intersection() {
@@ -120,7 +118,23 @@ module handle() {
     // Pivot holes
     translate([0, 0, -0.5]) {
       cylinder(thickness + 1, pivot_radius, pivot_radius);
-      translate([1.5*linkage_length, 0, 0]) cylinder(thickness + 1, pivot_radius, pivot_radius);
+      translate([rack_length, 0, 0]) cylinder(thickness + 1, pivot_radius, pivot_radius);
+    }
+  }
+}
+
+module linkage() {
+  difference() {
+    union() {
+      translate([0, -thickness/2, 0]) cube([linkage_length, thickness, width/4]);
+      cylinder(width/4, thickness/2, thickness/2);
+      translate([linkage_length, 0, 0]) cylinder(width/4, thickness/2, thickness/2);
+    }
+
+    // Pivot holes
+    translate([0, 0, -1]) {
+      cylinder(thickness + 2, pivot_radius, pivot_radius);
+      translate([linkage_length, 0, 0]) cylinder(thickness + 2, pivot_radius, pivot_radius);
     }
   }
 }
@@ -141,13 +155,21 @@ module part_cylinder(r, angle, height, center=false) {
 }
 
 union() {
+  first_pivot_x_offset = length - handle_offset - rack_length - linkage_length;
+
   base();
-  translate([length - thickness - 2.5*linkage_length - handle_offset, thickness, linkage_height]) moving_jaw();
-  translate([length - handle_offset, thickness/2, linkage_height])rotate([90, 0, 180]) handle();
+  translate([first_pivot_x_offset - thickness, thickness, linkage_height]) moving_jaw();
+  translate([length - handle_offset, thickness/2, linkage_height]) rotate([90, 0, 180]) handle();
+  translate([first_pivot_x_offset, thickness/2, linkage_height]) {
+    rotate([90, 0, 0]) linkage();
+    translate([0, 1.5*thickness, 0]) rotate([90, 0, 0]) linkage();
+  }
 }
 *base();
-*handle_rail();
 *moving_jaw();
 *handle();
+*linkage();
 
-
+max_opening = length - rack_length - linkage_length - thickness;
+echo("Min opening: ", max_opening - rack_horizontal_length);
+echo("Max opening: ", max_opening);
