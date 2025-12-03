@@ -17,19 +17,15 @@ width = d*4;
 1_inch = 25.4;
 pivot_radius = 3/16*1_inch;
 pressure_angle = 20;
-mod = 1.5;
+mod = 2;
 tolerance = 0.2;
-rack_teeth = 20;
+rack_teeth = 10;
 rack_length = PI*mod*rack_teeth;
-rack_angle = 22.5;
-rack_horizontal_length = cos(rack_angle)*rack_length;
-rack_vertical_length = sin(rack_angle)*rack_length;
 handle_gear_teeth = 24;
 handle_pitch_radius = handle_gear_teeth*mod/2;
-handle_pivot_height_above_rack_base = handle_pitch_radius + 1.25*mod;
-handle_offset = rack_horizontal_length/2 + handle_pivot_height_above_rack_base*sin(rack_angle); // Distance from the back of the base to the handle pivot
+handle_pivot_height = handle_pitch_radius + 1.25*mod; // The height above the base of the rack
 linkage_length = 40;
-linkage_height = d*2 + rack_vertical_length/2 + handle_pivot_height_above_rack_base*cos(rack_angle);
+linkage_height = d*2 + handle_pivot_height;
 
 
 module base() {
@@ -41,44 +37,28 @@ module base() {
   cube([d*2, width, d*4]);
 
   // Rack
-  translate([length, 0, rack_vertical_length + d*2]) {
-    rotate([90, rack_angle, 180]) {
+  translate([length, 0, d*2]) {
+    rotate([90, 0, 180]) {
       rack(length=rack_length, width=width, pressure_angle=pressure_angle, mod=mod, base_thickness=0);
 
       // Rails for handle
       handle_rail();
       translate([0, 0, 0.75*width]) handle_rail();
     }
-
-    // Rack angled platform
-    rotate([-90, 0, 0]) linear_extrude(width) polygon([[0, 0], [0, rack_vertical_length], [-rack_horizontal_length, rack_vertical_length]]);
   }
 }
-
-
-
-*rotate([90, rack_angle, 180]) rack(length=rack_length, width=width, pressure_angle=pressure_angle, mod=mod, base_thickness=0);
-
-
-
-
-
-
-
-
-
 
 module handle_rail() {
   difference() {
     union() {
-      cube([rack_length, handle_pivot_height_above_rack_base, d]);
-      translate([d, 0, 0]) cube([rack_length - d*2, handle_pivot_height_above_rack_base + d, d]);
-      translate([d, handle_pivot_height_above_rack_base, 0]) cylinder(d, d, d);
-      translate([rack_length - d, handle_pivot_height_above_rack_base, 0]) cylinder(d, d, d);
+      cube([rack_length, handle_pivot_height, d]);
+      translate([d, 0, 0]) cube([rack_length - d*2, handle_pivot_height + d, d]);
+      translate([d, handle_pivot_height, 0]) cylinder(d, d, d);
+      translate([rack_length - d, handle_pivot_height, 0]) cylinder(d, d, d);
     }
 
     // Slot for pivot
-    translate([d, handle_pivot_height_above_rack_base - pivot_radius, -0.5]) {
+    translate([d, handle_pivot_height - pivot_radius, -0.5]) {
       cube([rack_length - d*2, pivot_radius*2, d + 1]);
       translate([0, pivot_radius, 0]) cylinder(d + 1, pivot_radius, pivot_radius);
       translate([rack_length - d*2, pivot_radius, 0]) cylinder(d + 1, pivot_radius, pivot_radius);
@@ -112,10 +92,10 @@ module handle() {
       // Long bar
       rotate([0, 0, 15]) translate([0, -d, 0]) cube([length, d*2, d*2]);
       // Linkage part
-      translate([0, -d, 0]) cube([rack_horizontal_length, d*2, d*2]);
+      translate([0, -d, 0]) cube([rack_length, d*2, d*2]);
       // Rounded ends
       cylinder(d*2, d, d);
-      translate([rack_horizontal_length, 0, 0]) cylinder(d*2, d, d);
+      translate([rack_length, 0, 0]) cylinder(d*2, d, d);
       // Teeth
       gear_section_angle = 360*6.5/handle_gear_teeth;
       intersection() {
@@ -130,7 +110,7 @@ module handle() {
     // Pivot holes
     translate([0, 0, -0.5]) {
       cylinder(d*2 + 1, pivot_radius, pivot_radius);
-      translate([rack_horizontal_length, 0, 0]) cylinder(d*2 + 1, pivot_radius, pivot_radius);
+      translate([rack_length, 0, 0]) cylinder(d*2 + 1, pivot_radius, pivot_radius);
     }
   }
 }
@@ -167,11 +147,11 @@ module part_cylinder(r, angle, height, center=false) {
 }
 
 union() {
-  first_pivot_x_offset = length - handle_offset - rack_horizontal_length - linkage_length;
+  first_pivot_x_offset = length - rack_length/2 - rack_length - linkage_length;
 
   base();
   translate([first_pivot_x_offset - d*2, d*2, linkage_height]) moving_jaw();
-  translate([length - handle_offset, d, linkage_height]) rotate([90, 0, 180]) handle();
+  translate([length - rack_length/2, d, linkage_height]) rotate([90, 0, 180]) handle();
   translate([first_pivot_x_offset, d, linkage_height]) {
     rotate([90, 0, 0]) linkage();
     translate([0, d*3, 0]) rotate([90, 0, 0]) linkage();
@@ -182,6 +162,6 @@ union() {
 *handle();
 *linkage();
 
-max_opening = length - rack_horizontal_length - linkage_length - d*2;
-echo("Min opening: ", max_opening - rack_horizontal_length);
+max_opening = length - rack_length - linkage_length - d*2;
+echo("Min opening: ", max_opening - rack_length);
 echo("Max opening: ", max_opening);
