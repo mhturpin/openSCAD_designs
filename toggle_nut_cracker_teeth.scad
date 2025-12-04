@@ -3,11 +3,9 @@ $vpd = 600;
 $vpr = [80, 0, 0];
 $vpt = [90, 0, 40];
 
+
+// Figure out linkage bolt clearance
 // Round teeth
-// Calculate handle angle based on length and backstop height
-// Fix handle intereference with moving jaw
-// Fix teeth intereference with moving jaw
-// Create sliding stop
 // Bevel corners
 // Figure out max opening, set length based on desired opening?
 
@@ -16,7 +14,9 @@ length = 200;
 d = 10; // The core dimension
 th = d*2; // The base thickness
 width = d*4;
-linkage_length = 40;
+linkage_length = 25;
+linkage_height = 2*th;
+ram_length = 6*d;
 1_inch = 25.4;
 pivot_radius = 3/16*1_inch;
 tolerance = 0.2;
@@ -24,7 +24,8 @@ tooth_height = d/2;
 tooth_width = 2*tooth_height;
 num_teeth = (length - th - linkage_length)/tooth_width;
 rack_length = 2*tooth_height*num_teeth;
-linkage_height = th + tooth_height + d;
+carriage_length = ram_length + 2*linkage_length + d;
+carriage_width = width + 2*d;
 
 
 module base() {
@@ -33,11 +34,15 @@ module base() {
 
   // Backstop rounded transition
   difference() {
-    cube(width);
-    translate([width, -1, width]) rotate([-90, 0, 0]) cylinder(width + 2, th, th);
+    cube([1.5*th, width, 1.5*th]);
+    translate([1.5*th, -1, 1.5*th]) rotate([-90, 0, 0]) cylinder(width + 2, d, d);
   }
+
   // Backstop rounded top
-  translate([0, th, th*2]) rotate([0, 90, 0]) cylinder(th, width/2, width/2);
+  translate([0, d, 0]) cube([th, th, 5*d]); // Middle
+  cube([th, width, 2*th]); // Wide section
+  translate([0, d, 4*d]) rotate([0, 90, 0]) cylinder(th, d, d); // Corner
+  translate([0, 3*d, 4*d]) rotate([0, 90, 0]) cylinder(th, d, d); // Corner
 
   // Teeth
   translate([0, 0, th]) for (i = [1:num_teeth]) {
@@ -58,22 +63,16 @@ module rack_tooth() {
 }
 
 module moving_jaw() {
-  rotate([0, 90, 0]) difference() {
-    hull() {
-      // Tapered part
-      cylinder(th, th*0.75, d);
+  rotate([-90, 180, 0]) difference() {
+    union() {
       // Rounded back
-      translate([0, d, th]) rotate([90, 0, 0]) cylinder(th, d, d);
-    }
-
-    // Flats for attaching the linkage
-    translate([-th, 0, d]) {
-      translate([0, d, 0]) cube(d*4);
-      translate([0, -2.5*th, 0]) cube(th*2);
+      cylinder(th, d, d);
+      // Ram
+      translate([0, -d, 0]) cube([ram_length, th, th]);
     }
 
     // Hole for the linkage pin
-    translate([0, d + 1, th]) rotate([90, 0, 0]) cylinder(th + 2, pivot_radius, pivot_radius);
+    translate([0, 0, -1]) cylinder(th + 2, pivot_radius, pivot_radius);
   }
 }
 
@@ -81,12 +80,16 @@ module handle() {
   rotate([90, 0, 180]) difference() {
     union() {
       // Long bar
-      rotate([0, 0, 15]) translate([0, -d, 0]) cube([length, th, th]);
+      translate([0, d, 0]) cube([length, th, th]);
       // Linkage part
       translate([0, -d, 0]) cube([linkage_length, th, th]);
-      // Rounded ends
-      cylinder(th, d, d);
-      translate([linkage_length, 0, 0]) cylinder(th, d, d);
+      // Rounded back
+      translate([0, d, 0]) cylinder(th, th, th);
+      // Front
+      translate([linkage_length, 0, 0]) {
+        cube([d, th, th]);
+        cylinder(th, d, d);
+      }
     }
 
     // Pivot holes
@@ -116,6 +119,38 @@ module linkage() {
 }
 
 
+module carriage() {
+
+  difference() {
+    // Main body
+    cube([carriage_length, carriage_width, 5*d]);
+    
+    // Subtract base
+    translate([-1, d, -1]) cube([length + 2, width, th + 1]);
+
+    // Subtract teeth
+    for (i = [0:num_teeth]) {
+      translate([i*tooth_width, d, th - 0.01]) rack_tooth();
+    }
+
+    // Subtract handle and ram
+    translate([-1, 2*d, linkage_height - d]) cube([carriage_length + 2, th, th + 1]);
+
+    // Subtract linkages
+    translate([ram_length - d, d, linkage_height - d]) {
+      cube([linkage_length + 2*d, width, th + 1]);
+      // Angled transitions
+      rotate([0, -30, 0]) cube(width);
+      translate([linkage_length + 2*d, 0, 0]) rotate([0, -60, 0]) cube(width);
+    }
+    
+
+    // Back pivot
+    translate([carriage_length - d, -1, linkage_height]) rotate([-90, 0, 0]) cylinder(carriage_width + 2, pivot_radius, pivot_radius);
+  }
+}
+
+
 union() {
   base();
 
@@ -128,7 +163,7 @@ union() {
       linkage();
       translate([0, d*3, 0]) linkage();
     }
-    translate([third_pivot - th, th, 0]) moving_jaw();
+    translate([third_pivot, d, 0]) moving_jaw();
   }
 }
 *base();
@@ -136,6 +171,7 @@ union() {
 *handle();
 *linkage();
 *rack_tooth();
+translate([length - carriage_length, -2*width, 0]) carriage();
 
 
 max_opening = length - rack_length - linkage_length - d*2;
