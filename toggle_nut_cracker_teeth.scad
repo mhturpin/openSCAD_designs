@@ -24,7 +24,7 @@ tooth_height = d/2;
 tooth_width = 2*tooth_height;
 num_teeth = (length - th - linkage_length)/tooth_width;
 rack_length = 2*tooth_height*num_teeth;
-carriage_length = ram_length + 2*linkage_length + d;
+carriage_length = ram_length + 2*linkage_length + d - 10; // -10 to give space for ram to retract
 carriage_width = width + 2*d;
 
 
@@ -72,7 +72,7 @@ module moving_jaw() {
     }
 
     // Hole for the linkage pin
-    translate([0, 0, -1]) cylinder(th + 2, pivot_radius, pivot_radius);
+    translate([0, 0, -1]) pivot(th + 2);
   }
 }
 
@@ -94,8 +94,8 @@ module handle() {
 
     // Pivot holes
     translate([0, 0, -1]) {
-      cylinder(th + 2, pivot_radius, pivot_radius);
-      translate([linkage_length, 0, 0]) cylinder(th + 2, pivot_radius, pivot_radius);
+      pivot(th + 2);
+      translate([linkage_length, 0, 0]) pivot(th + 2);
     }
   }
 }
@@ -112,15 +112,14 @@ module linkage() {
 
     // Pivot holes
     translate([0, 0, -1]) {
-      cylinder(d + 2, pivot_radius, pivot_radius);
-      translate([linkage_length, 0, 0]) cylinder(d + 2, pivot_radius, pivot_radius);
+      pivot(d + 2);
+      translate([linkage_length, 0, 0]) pivot(d + 2);
     }
   }
 }
 
 
 module carriage() {
-
   difference() {
     // Main body
     cube([carriage_length, carriage_width, 5*d]);
@@ -136,18 +135,37 @@ module carriage() {
     // Subtract handle and ram
     translate([-1, 2*d, linkage_height - d]) cube([carriage_length + 2, th, th + 1]);
 
+    // Slot for cam part of handle
+    translate([carriage_length - th, 2*d, th - 1]) cube([th + 1, th, linkage_height - th]);
+
     // Subtract linkages
-    translate([ram_length - d, d, linkage_height - d]) {
+    translate([ram_length - d - 10, d, linkage_height - d]) {
+      // Linkage body
       cube([linkage_length + 2*d, width, th + 1]);
+
       // Angled transitions
-      rotate([0, -30, 0]) cube(width);
-      translate([linkage_length + 2*d, 0, 0]) rotate([0, -60, 0]) cube(width);
+      rotate([0, -30, 0]) cube(width); // Front
+      translate([linkage_length + 2*d, 0, 0]) rotate([0, -60, 0]) cube(width); // Back
+
+      // Slot for front pivot
+      translate([d, -d - 1, d]) {
+        translate([0, 0, -pivot_radius]) cube([linkage_length/2, carriage_width + 2, 2*pivot_radius]);
+        rotate([-90, 0, 0]) pivot(carriage_width + 2);
+        translate([linkage_length/2, 0, 0]) rotate([-90, 0, 0]) pivot(carriage_width + 2);
+      }
     }
-    
+
+ 
+
+    // Clearance for middle pivot
 
     // Back pivot
-    translate([carriage_length - d, -1, linkage_height]) rotate([-90, 0, 0]) cylinder(carriage_width + 2, pivot_radius, pivot_radius);
+    translate([carriage_length - d, -1, linkage_height]) rotate([-90, 0, 0]) pivot(carriage_width + 2);
   }
+}
+
+module pivot(pivot_len) {
+  cylinder(pivot_len, pivot_radius, pivot_radius);
 }
 
 
