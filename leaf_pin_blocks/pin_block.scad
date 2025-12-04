@@ -1,15 +1,24 @@
+// This is designed to be assembled with sequin pins and #4 x 1/2" wood screws
+// https://www.michaels.com/product/loops-threads-appliquesequin-pins-M10340868
+// https://www.homedepot.com/p/Everbilt-4-x-1-2-in-Phillips-Flat-Head-Zinc-Plated-Wood-Screw-100-Pack-801742/204275520
+
 $fn = $preview ? 50 : 200;
 step = $preview ? 10 : 2;
+$vpd = 250;
+$vpr = [40, 0, 60];
+$vpt = [25, 0, 10];
+
+
+pin_spacing = 3;
 
 disk_radius = 5/16*25.4;
 pin_height = 13.7;
 pin_head_height = 0.8;
-pin_spacing = 3;
 pin_radius = 0.6;
 extra_radius = 10;
-screw_radius = 1.8;
-screw_head_radius = 4.25;
-screw_head_height = 3.5;
+screw_head_radius = 2.5;
+screw_head_height = 2.5;
+screw_radius = 1.2;
 cap_thickness = 5;
 
 module pin_holder() {
@@ -41,8 +50,8 @@ module pin_holder() {
     }
 
     // Holes for screws
-    for (i = [0:3]) {
-      rotate(i*90) translate([disk_radius + extra_radius/2, 0, 4]) cylinder(pin_height, screw_radius, screw_radius);
+    for (i = [0:2]) {
+      rotate(i*120) translate([disk_radius + extra_radius/2, 0, 4]) cylinder(pin_height, screw_radius, screw_radius);
     }
   }
 }
@@ -70,12 +79,12 @@ module top() {
     cylinder(cap_thickness, disk_radius + extra_radius, disk_radius + extra_radius);
 
     // Holes for screws
-    for (i = [0:3]) {
-      rotate(i*90) translate([disk_radius + extra_radius/2, 0, -0.1]) {
-        // Relief for the flare
-        cylinder(1, screw_head_radius, screw_head_radius);
+    for (i = [0:2]) {
+      rotate(i*120) translate([disk_radius + extra_radius/2, 0, -0.1]) {
+        // Relief for the rounded edge
+        cylinder(1.01, screw_head_radius, screw_head_radius);
         // Tapered part of the head
-        cylinder(screw_head_height, screw_head_radius, screw_radius);
+        translate([0, 0, 1]) cylinder(screw_head_height - 1, screw_head_radius, screw_radius);
         // Shaft
         cylinder(cap_thickness + 2, screw_radius, screw_radius);
       }
