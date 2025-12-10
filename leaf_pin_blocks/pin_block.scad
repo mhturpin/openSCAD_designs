@@ -13,25 +13,26 @@ pin_spacing = 3;
 
 disk_radius = 5/16*25.4;
 pin_height = 13.7;
-pin_head_height = 0.8;
-pin_radius = 0.6; // The pins are only 0.32mm diameter, but this extra accounts for the hole shrinking as it's printed
+pin_head_height = 0.7;
+pin_radius = 0.32;
 extra_radius = 10;
 screw_head_radius = 2.5;
 screw_head_height = 2.5;
-screw_radius = 1.2;
+screw_radius = 1.42; // Outside diameter of threads
 cap_thickness = 5;
 
 module pin_holder() {
   difference() {
-    // Height of body is pin_height + 1 to keep the tips from protruding
-    cylinder(pin_height + 1, disk_radius + extra_radius, disk_radius + extra_radius);
+    // Height of body is pin_height + 0.5 to keep the tips from protruding
+    // The height of the head is 0.5mm, so this will make the tips about 1mm below the edge
+    cylinder(pin_height + 0.5, disk_radius + extra_radius, disk_radius + extra_radius);
 
     // Cavity
-    // 3.5mm to account for +1 on body height, pin head height, and ~2 for protrusion to poke the leaves
-    translate([0, 0, -0.1]) cylinder(3.6, disk_radius + extra_radius/2 + 0.2, disk_radius + extra_radius/2 + 0.2);
+    // 3mm to account for +0.5 on body height, pin head height, and ~2 for protrusion to poke the leaves
+    translate([0, 0, -0.1]) cylinder(3.1, disk_radius + extra_radius/2 + 0.1, disk_radius + extra_radius/2 + 0.1);
 
     // Cut out in case the leaf gets stuck to the pins
-    translate([0, -1.75, -0.1]) cube([disk_radius + extra_radius + 2, 3.5, 3.6]);
+    translate([0, -1.75, -0.1]) cube([disk_radius + extra_radius + 2, 3, 3.1]);
 
     // Pin holes
     // r is the row of dots
@@ -51,13 +52,13 @@ module pin_holder() {
 
     // Holes for screws
     for (i = [0:2]) {
-      rotate(i*120) translate([disk_radius + extra_radius/2, 0, 4]) cylinder(pin_height, screw_radius, screw_radius);
+      rotate(i*120) translate([disk_radius + extra_radius/2, 0, 4]) cylinder(pin_height, screw_radius - 0.25, screw_radius - 0.25);
     }
   }
 }
 
 module pin_hole() {
-  translate([0, 0, -0.5]) cylinder(pin_height + 2, pin_radius, pin_radius);
+  translate([0, 0, -1]) cylinder(pin_height + 2, pin_radius + 0.1, pin_radius + 0.1);
 }
 
 module base() {
@@ -84,9 +85,9 @@ module top() {
         // Relief for the rounded edge
         cylinder(1.01, screw_head_radius, screw_head_radius);
         // Tapered part of the head
-        translate([0, 0, 1]) cylinder(screw_head_height - 1, screw_head_radius, screw_radius);
+        translate([0, 0, 1]) cylinder(screw_head_height - 1, screw_head_radius, screw_radius + 0.1);
         // Shaft
-        cylinder(cap_thickness + 2, screw_radius, screw_radius);
+        cylinder(cap_thickness + 2, screw_radius + 0.1, screw_radius + 0.1);
       }
     }
     
@@ -101,7 +102,14 @@ translate([2*(disk_radius + extra_radius) + extra_radius, 0, 0]) base();
 translate([0, 2*(disk_radius + extra_radius) + extra_radius, 0]) top();
 
 
+translate([30, 30, 0]) difference() {
+  cube(6);
 
+  translate([2, 2, -1]) cylinder(pin_height + 2, pin_radius, pin_radius);
+  translate([2, 4, -1]) cylinder(pin_height + 2, pin_radius + 0.1, pin_radius + 0.1);
+  translate([4, 2, -1]) cylinder(pin_height + 2, pin_radius + 0.2, pin_radius + 0.2);
+  translate([4, 4, -1]) cylinder(pin_height + 2, pin_radius + 0.3, pin_radius + 0.3);
+}
 
 
 
