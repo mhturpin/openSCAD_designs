@@ -58,7 +58,7 @@ module pin_holder() {
 }
 
 module pin_hole() {
-  translate([0, 0, -1]) cylinder(pin_height + 2, pin_radius + 0.1, pin_radius + 0.1);
+  translate([0, 0, -1]) cylinder(pin_height + 2, pin_radius + 0.2, pin_radius + 0.2);
 }
 
 module base() {
