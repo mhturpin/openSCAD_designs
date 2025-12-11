@@ -62,16 +62,17 @@ module pin_hole() {
 module base() {
   // Base
   cylinder(cap_thickness, block_radius, block_radius);
+  cylinder(cap_thickness + 2, disk_radius, disk_radius);
 
   difference() {
     // Centering ring
     cylinder(cap_thickness + 3, block_radius - extra_radius/2, block_radius - extra_radius/2);
     // Cut out the center, taper so that there's a small lip to hold the leaf in place
-    translate([0, 0, cap_thickness + 2]) cylinder(1.1, disk_radius + 0.2, disk_radius - 0.2);
+    translate([0, 0, cap_thickness + 2]) cylinder(1.1, disk_radius + 0.2, disk_radius - 0.1);
 
     // Cut outs to make the leaf easy to remove
     for (i = [0:3]) {
-      rotate(i*90) translate([0, 0, cap_thickness + 2]) rotate_extrude(angle = 60) square([block_radius, 2]);
+      rotate(i*90) translate([0, 0, cap_thickness]) rotate_extrude(angle = 60) square([block_radius, 3.1]);
     }
   }
 }
