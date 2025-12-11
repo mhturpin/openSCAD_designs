@@ -65,7 +65,7 @@ module base() {
   cylinder(cap_thickness + 2, disk_radius, disk_radius);
 
   difference() {
-    // Centering ring
+    // Centering nubs
     cylinder(cap_thickness + 3, block_radius - extra_radius/2, block_radius - extra_radius/2);
     // Cut out the center, taper so that there's a small lip to hold the leaf in place
     translate([0, 0, cap_thickness + 2]) cylinder(1.1, disk_radius + 0.2, disk_radius - 0.1);
