@@ -94,18 +94,20 @@ module blade_transform() {
                     children();
 }
 
-// Base slot shape: wall on bevel side (canonical x = 0), open toward flat back.
+// Base slot shape: blade swept in canonical -X — removes everything the blade
+// intersects as it slides toward the flat-back side.  Open on the -X (flat-back) face.
 module blade_shape_base(extra = clearance) {
-    translate([-(blade_thickness + extra), -extra, -extra])
-        cube([blade_thickness + extra,
+    translate([-(blade_thickness + extra + 200), -extra, -extra])
+        cube([blade_thickness + extra + 200,
               blade_width     + 2*extra,
               blade_height    + 2*extra]);
 }
 
-// Holder pocket shape: walls on flat back (canonical x = -blade_thickness) and y-sides.
+// Holder pocket shape: blade swept in canonical +X — removes everything the blade
+// intersects as it slides toward the bevel side.  Open on the +X (bevel) face.
 module blade_shape_holder(extra = clearance) {
     translate([-blade_thickness, -extra, -extra])
-        cube([blade_thickness + extra,
+        cube([blade_thickness + extra + 200,
               blade_width     + 2*extra,
               blade_height    + 2*extra]);
 }
@@ -215,6 +217,15 @@ module blade_holder() {
     }
 }
 
+// --- Blade visualization ---
+// Shows the blade as a transparent ghost in the assembly preview.
+module blade_viz() {
+    % blade_transform()
+        translate([-blade_thickness, 0, 0])
+            cube([blade_thickness, blade_width, blade_height]);
+}
+
 // --- Assembly preview ---
 base_piece();
-blade_holder();
+*blade_holder();
+blade_viz();
