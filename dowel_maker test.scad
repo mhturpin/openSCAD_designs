@@ -30,8 +30,9 @@ blade_angle  = atan(advance / (PI * dowel_diameter)); // Helix angle
 tube_length    = 3 * dowel_diameter;
 entrance_or    = stock_radius + wall_thickness;      // entrance tube outer radius
 exit_or        = dowel_radius + wall_thickness;      // exit tube outer radius
-blade_y_center = blade_width/2 - dowel_radius;      // blade Y midpoint in world space
-holder_width   = 2 * (blade_y_center + entrance_or); // -Y edge tangent to tube, blade centered
+blade_y_start  = dowel_radius - blade_width/2;       // canonical Y of blade -Y edge (centered over dowel)
+blade_y_center = 0;                                  // blade world-Y midpoint (centered on dowel axis)
+holder_width   = blade_width + 4 * (1_inch/4);       // blade width plus 4x alignment pin diameter (1/4")
 section_length = blade_height * sin(45) + 2 * wall_thickness;
 pin_r          = 1_inch/8 + clearance;           // hole radius for 1/4" alignment pin (slip fit)
 pin_depth      = 10;
@@ -97,7 +98,7 @@ module blade_transform() {
 // Base slot shape: blade swept in canonical -X — removes everything the blade
 // intersects as it slides toward the flat-back side.  Open on the -X (flat-back) face.
 module blade_shape_base(extra = clearance) {
-    translate([-(blade_thickness + extra + 200), -extra, -extra])
+    translate([-(blade_thickness + extra + 200), blade_y_start - extra, -extra])
         cube([blade_thickness + extra + 200,
               blade_width     + 2*extra,
               blade_height    + 2*extra]);
@@ -106,7 +107,7 @@ module blade_shape_base(extra = clearance) {
 // Holder pocket shape: blade swept in canonical +X — removes everything the blade
 // intersects as it slides toward the bevel side.  Open on the +X (bevel) face.
 module blade_shape_holder(extra = clearance) {
-    translate([-blade_thickness, -extra, -extra])
+    translate([-blade_thickness, blade_y_start - extra, -extra])
         cube([blade_thickness + extra + 200,
               blade_width     + 2*extra,
               blade_height    + 2*extra]);
@@ -131,7 +132,7 @@ module base_piece() {
         // ----- Solid body -----
         union() {
             // Rectangular middle section (height = entrance tube OD)
-            translate([sx_start, -entrance_or, -entrance_or])
+            translate([sx_start, -holder_width/2, -entrance_or])
                 cube([section_length, holder_width, 2 * entrance_or]);
 
             // Entrance tube (+X side)
@@ -185,7 +186,7 @@ module blade_holder() {
 
     difference() {
         // ----- Solid block -----
-        translate([sx_start, -entrance_or, entrance_or])
+        translate([sx_start, -holder_width/2, entrance_or])
             cube([section_length, holder_width, holder_height]);
 
         // ----- Blade pocket -----
@@ -221,7 +222,7 @@ module blade_holder() {
 // Shows the blade as a transparent ghost in the assembly preview.
 module blade_viz() {
     % blade_transform()
-        translate([-blade_thickness, 0, 0])
+        translate([-blade_thickness, blade_y_start, 0])
             cube([blade_thickness, blade_width, blade_height]);
 }
 
