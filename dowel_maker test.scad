@@ -88,7 +88,7 @@ holder_height    = dowel_radius + blade_height * cos(45) + wall_thickness - entr
 // To position the blade at a specific x along the tube axis, wrap with:
 //   translate([x_cut, 0, 0]) blade_transform() { ... }
 module blade_transform() {
-    translate([1, 0, dowel_radius])
+    translate([advance + 1, 0, dowel_radius])
         rotate([0, 0, blade_angle])
             rotate([0, 45, 0])
                 translate([blade_thickness, -dowel_radius, 0])
