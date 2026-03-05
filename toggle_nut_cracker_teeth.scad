@@ -8,6 +8,7 @@ $vpt = [90, 0, 40];
 // Round teeth
 // Bevel corners
 // Figure out max opening, set length based on desired opening?
+// Maybe make handle straddle carriage? == Less complexity?
 
 
 length = 200;
