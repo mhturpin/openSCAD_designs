@@ -27,7 +27,7 @@ blade_angle  = atan(advance / (PI * dowel_diameter)); // Helix angle
 // The blade edge is tangent to the top of the dowel cylinder at (x_cut, 0, dowel_radius).
 
 // Derived dimensions
-tube_length    = 3 * dowel_diameter;
+tube_length    = 2 * dowel_diameter;
 entrance_or    = stock_radius + wall_thickness;      // entrance tube outer radius
 exit_or        = dowel_radius + wall_thickness;      // exit tube outer radius
 blade_y_start  = dowel_radius - blade_width/2;       // canonical Y of blade -Y edge (centered over dowel)
@@ -136,14 +136,16 @@ module base_piece() {
                 cube([section_length, holder_width, 2 * entrance_or]);
 
             // Entrance tube (+X side)
-            translate([sx_end, 0, 0])
-                rotate([0, 90, 0])
-                    cylinder(r = entrance_or, h = tube_length);
+            rotate([0, 90, 0])
+                cylinder(r = entrance_or, h = tube_length);
 
             // Exit tube (-X side)
-            translate([sx_start - tube_length, 0, 0])
-                rotate([0, 90, 0])
-                    cylinder(r = exit_or, h = tube_length);
+            rotate([0, -90, 0])
+                cylinder(r = exit_or, h = tube_length);
+            
+            // Exit tube support
+            support_side = entrance_or - dowel_radius;
+            translate([-tube_length, -support_side/2, -entrance_or]) cube(support_side);
         }
 
         // ----- Bores -----
