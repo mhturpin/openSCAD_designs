@@ -4,11 +4,6 @@ $vpr = [45, 0, 30];
 $vpt = [20, -30, 30];
 
 // Screw diameter
-// Instead of starting with a block and trimming, build up components
-// Dowel exit cylinder
-// Stock entrance cylinder
-// Flat surface for clamping (same as blade bed?)
-// Blade bed
 
 
 
@@ -28,6 +23,7 @@ blade_thickness = 2;
 screw_hole_radius = 1;
 advance = 3; // How much the blade advances per turn
 wall_thickness = 1_inch/4;
+alignment_pin_depth = 1_inch/2;
 
 // Calculated values
 dowel_radius = dowel_diameter/2;
@@ -51,10 +47,15 @@ module dowel_guide() {
       // Dowel exit guide
       rotate([0, -90, 0]) cylinder(tube_length, dowel_tube_radius, dowel_tube_radius);
       // Center block
-      translate([0, -blade_holder_y/2, -stock_tube_radius]) cube([blade_holder_x, blade_holder_y, 2*stock_tube_radius]);
-      
-      // Center block can be triangle/trapezoid to reduce corners?
-      
+      block_points = [
+        [stock_tube_radius, stock_tube_radius],
+        [stock_tube_radius, -stock_tube_radius],
+        [-stock_tube_radius + alignment_pin_depth, -blade_holder_y/2],
+        [-stock_tube_radius, -blade_holder_y/2],
+        [-stock_tube_radius, blade_holder_y/2],
+        [-stock_tube_radius + alignment_pin_depth, blade_holder_y/2]
+      ];
+      rotate([0, 90, 0]) linear_extrude(blade_holder_x) polygon(block_points);
       
     }
 
@@ -64,7 +65,7 @@ module dowel_guide() {
     // Remove the blade recess, plus 3mm extra adjustment depth
     position_blade() translate([-3, 0, 0]) cube([blade_height, blade_width + clearance, 100]);
     // Alignment pins
-    translate([0, 0, stock_tube_radius - 1_inch/2]) alignment_pins();
+    translate([0, 0, stock_tube_radius - alignment_pin_depth]) alignment_pins();
 
     // Slot/relief for screw and washer
     
@@ -85,7 +86,7 @@ module blade_holder() {
       translate([blade_height/2, blade_width/2, blade_thickness - 0.1]) cylinder(18, screw_hole_radius, screw_hole_radius);
     }
     // Alignment pins
-    translate([0, 0, stock_tube_radius - 1_inch/2]) alignment_pins();
+    translate([0, 0, stock_tube_radius - alignment_pin_depth]) alignment_pins();
   }
 }
 
@@ -110,7 +111,7 @@ module alignment_pins() {
 }
 
 module alignment_pin() {
-  cylinder(1_inch, 1_inch/8, 1_inch/8);
+  cylinder(2*alignment_pin_depth, 1_inch/8, 1_inch/8);
 }
 
 
