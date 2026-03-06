@@ -35,12 +35,12 @@ recess_depth = (blade_height - 1_inch/2)/sqrt(2); // Leave 1/2" of the blade pro
 stock_tube_radius = stock_radius + wall_thickness; // Outer radius of stock guide
 dowel_tube_radius = dowel_radius + wall_thickness; // Outer radius of dowel guide
 tube_length = 2*dowel_diameter;
-
-//width = max(2*min_distance, blade_width + min_wall_thickness*2); // Ensure the body is wide enough for the blade
-//height = recess_depth + radius + min_distance;
-//length = 1.5*width;
 blade_offset = advance + 1; // Shift the blade to accomodate the advancing stock, and a gap for shavings
 blade_angle = atan(advance/(PI*dowel_diameter));
+blade_wall_thickness = 1_inch/2;
+blade_holder_x = (blade_height - 1_inch/2)/sqrt(2);
+blade_holder_y = blade_width + 2*blade_wall_thickness;
+blade_holder_z = 20;
 
 
 module dowel_guide() {
@@ -51,25 +51,42 @@ module dowel_guide() {
       // Dowel exit guide
       rotate([0, -90, 0]) cylinder(tube_length, dowel_tube_radius, dowel_tube_radius);
       // Center block
-      cube([blade_width/2, blade_width, 2*stock_tube_radius], center=true);
+      translate([0, -blade_holder_y/2, -stock_tube_radius]) cube([blade_holder_x, blade_holder_y, 2*stock_tube_radius]);
       
-      // taper center block to allow printing
-    
+      // Center block can be triangle/trapezoid to reduce corners?
+      
+      
     }
-    
+
     // Hollow out tubes
     rotate([0, 90, 0]) translate([0, 0, -1]) cylinder(tube_length + 2, stock_radius, stock_radius);
     rotate([0, -90, 0]) translate([0, 0, -1]) cylinder(tube_length + 2, dowel_radius, dowel_radius);
+    // Remove the blade recess, plus 3mm extra adjustment depth
+    position_blade() translate([-3, 0, 0]) cube([blade_height, blade_width + clearance, 100]);
+    // Alignment pins
+    translate([0, 0, stock_tube_radius - 1_inch/2]) alignment_pins();
+
+    // Slot/relief for screw and washer
     
-    position_blade() blade_with_screw();
+    
   }
 }
 
-module blade_with_screw() {
-  // Blade
-  cube([blade_height, blade_width + clearance, blade_thickness]);
-  // Screw hole
-  translate([blade_height/2, blade_width/2, blade_thickness]) cylinder(0.75*1_inch, screw_hole_radius, screw_hole_radius);
+module blade_holder() {
+  difference() {
+    // Block
+    translate([0, -blade_holder_y/2, stock_tube_radius]) cube([blade_holder_x, blade_holder_y, blade_holder_z]);
+
+    // Remove the blade, screw, and anything below
+    position_blade() {
+      // Blade and below
+      translate([0, 0, blade_thickness - 50]) cube([blade_height, blade_width + clearance, 50]);
+      // Screw hole
+      translate([blade_height/2, blade_width/2, blade_thickness - 0.1]) cylinder(18, screw_hole_radius, screw_hole_radius);
+    }
+    // Alignment pins
+    translate([0, 0, stock_tube_radius - 1_inch/2]) alignment_pins();
+  }
 }
 
 module position_blade() {
@@ -82,42 +99,22 @@ module position_blade() {
   }
 }
 
+module alignment_pins() {
+  pin_x_1 = 1_inch/4;
+  pin_y = blade_holder_y/2 - 1_inch/4;
+  translate([pin_x_1, pin_y, 0]) alignment_pin();
+  translate([pin_x_1, -pin_y, 0]) alignment_pin();
+  pin_x_2 = blade_holder_x - 1_inch/4;
+  translate([pin_x_2, pin_y, 0]) alignment_pin();
+  translate([pin_x_2, -pin_y, 0]) alignment_pin();
+}
+
+module alignment_pin() {
+  cylinder(1_inch, 1_inch/8, 1_inch/8);
+}
+
 
 
 dowel_guide();
+translate([0, 0, 5]) blade_holder();
 
-
-
-
-
-
-*difference() {
-  // Body
-  translate([-min_distance, -min_distance, -length/2]) cube([width, height, length]);
-
-  // Exit hole (final diameter)
-  cylinder(length + 1, radius + clearance/2, radius + clearance/2, center=true);
-
-  // Entrance hole
-  cylinder(width + 1, stock_radius + clearance/2, stock_radius + clearance/2);
-
-  // Blade slot
-  translate([0, radius, blade_offset]) { // Raise blade to the dowel radius, and shift back for the offset
-    rotate([-45, blade_angle, 0]) { // Rotate 45 for blade angle and blade_angle so it advances
-      translate([-stock_radius, 0, 0]) { // Shift blade to intersect the dowel
-        // Blade recess, translate down to give room to adjust blade depth
-        translate([0, 0, -1_inch/8]) cube([blade_width + clearance, blade_height, blade_height]);
-        // Screw hole
-        translate([blade_width/2, 0.1, blade_height/2]) rotate([90, 0, 0]) cylinder(1.5*1_inch, screw_hole_radius, screw_hole_radius);
-      }
-    }
-  }
-
-  // Surface perpendicular to the blade for hammer adjusting
-  translate([-min_distance - 1, stock_radius, length/2 + 10]) rotate([-45, blade_angle, 0]) cube([2*width, height + 2, length + 2]);
-
-  // Reduce the volume to make printing faster and use less material
-  translate([-min_distance - 1, min_distance, -length/2 - 1]) cube([width + 2, height, length/2 + 1]);
-  translate([-min_distance - 1, min_distance, 0]) rotate([-30, 0, 0]) cube([width + 2, height, height]);
-  translate([min_distance, -min_distance - 1, -length/2]) rotate([0, 30, 0]) cube([width, height, length]);
-}
