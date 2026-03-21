@@ -141,7 +141,7 @@ module tube_alignment_blocks() {
 module blade_holder() {
   difference() {
     // Block
-    translate([-blade_holder_height, -blade_holder_width/2, 0]) cube([blade_holder_length, blade_holder_width, blade_holder_height]);
+    translate([-blade_holder_length/2, -blade_holder_width/2, 0]) cube([blade_holder_length, blade_holder_width, blade_holder_height]);
 
     position_blade() {
       // Blade slot
@@ -168,10 +168,14 @@ module blade_holder() {
     }
 
     // Remove section to sit on top of dowel guide
-    translate([-blade_holder_length - blade_offset, -blade_holder_width/2 - 1, -1]) cube([blade_holder_length, blade_holder_width + 2, wall_thickness + 1]);
+    translate([-blade_holder_length/2, -blade_holder_width/2 - 1, -1]) cube([blade_holder_length, blade_holder_width + 2, wall_thickness + 1]);
 
     // Holes for alignment pins
     translate([-2*blade_offset - 2*alignment_pin_radius, 0, wall_thickness]) alignment_pins();
+
+    // Reduce mass for printing
+    translate([-blade_holder_length/2, 0, 0]) rotate(60) cube(2*blade_holder_height);
+    translate([-blade_holder_length/2, 0, 0]) rotate(-150) cube(2*blade_holder_height);
   }
 }
 
@@ -206,7 +210,7 @@ union() {
 
   translate([0, 0, dowel_radius + 10]) {
     // Blade for visualization purposes
-    #position_blade() cube([blade_height, blade_width, blade_thickness]);
+    *#position_blade() cube([blade_height, blade_width, blade_thickness]);
     blade_holder();
   }
 }
