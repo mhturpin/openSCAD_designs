@@ -7,12 +7,15 @@ $vpt = [20, -30, 30];
 
 // TODO
 // * Cut outs on guide tube to reduce printing?
-
+// * Add size labels to guides
+// Squares stick out on dowel guide
+// Make stock tube so it doesn't need printing supports
+// Stock tube cut 45 based on blade position
 
 
 // Constants, base measurement is mm
 1_inch = 25.4;
-clearance = 0.2;
+clearance = 0.25;
 
 // Setings
 dowel_diameter = 5/8*1_inch;
@@ -20,7 +23,7 @@ blade_width = 55;
 blade_height = 50;
 blade_thickness = 2;
 adjustment_hole_center = 9;
-screw_hole_radius = 1.8;
+screw_hole_radius = 2 - clearance;
 screw_head_radius = 4.15;
 advance = 3; // How much the blade advances per turn
 wall_thickness = 1_inch/4;
@@ -145,21 +148,21 @@ module blade_holder() {
 
     position_blade() {
       // Blade slot
-      translate([-blade_offset, 0, -(blade_height - blade_thickness)]) cube([2*blade_height, blade_width + clearance, blade_height]);
+      translate([-blade_offset, 0, -(blade_height - blade_thickness)]) cube([2*blade_height, blade_width + 2*clearance, blade_height]);
 
       // Remove the wings
       translate([0, -blade_width/2, -blade_height]) cube([2*blade_height, 2*blade_width, blade_height]);
 
       // Attachment screw hole
-      translate([blade_width/2, blade_height/2, 0]) cylinder(blade_holder_height/2, screw_hole_radius, screw_hole_radius);
+      translate([blade_width/2, blade_width/2, 0]) cylinder(blade_holder_height/2, screw_hole_radius, screw_hole_radius);
 
       // Adjustment screw holes
-      translate([blade_height - 1_inch/4 + 1, adjustment_hole_center, screw_head_radius + blade_thickness/2]) rotate([0, -90, 0]) cylinder(blade_holder_height/2, screw_hole_radius, screw_hole_radius);
-      translate([blade_height - 1_inch/4 + 1, blade_width - adjustment_hole_center, screw_head_radius + blade_thickness/2]) rotate([0, -90, 0]) cylinder(blade_holder_height/2, screw_hole_radius, screw_hole_radius);
+      translate([blade_height - 1_inch/4 + 1, adjustment_hole_center, screw_head_radius + blade_thickness/4]) rotate([0, -90, 0]) cylinder(blade_holder_height/2, screw_hole_radius, screw_hole_radius);
+      translate([blade_height - 1_inch/4 + 1, blade_width - adjustment_hole_center, screw_head_radius + blade_thickness/4]) rotate([0, -90, 0]) cylinder(blade_holder_height/2, screw_hole_radius, screw_hole_radius);
 
       translate([0, -wall_thickness - 1, 0]) {
       // Adjustment screw chamfer
-      translate([blade_height - 1_inch/4, -1, -1]) rotate([0, 0, 0]) cube([blade_holder_height, blade_holder_width + 2, blade_holder_height]);
+      translate([blade_height - 1_inch/4, -2, -1]) rotate([0, 0, 0]) cube([blade_holder_height, blade_holder_width + 4, blade_holder_height]);
 
       // Gap for chips
         translate([-chip_exit_radius, 0, -1]) cube([2*chip_exit_radius, blade_holder_width + 2, 2*chip_exit_radius + 1]);
@@ -181,7 +184,7 @@ module blade_holder() {
 
 module position_blade() {
   rotate([0, -45, blade_angle]) { // Rotate 45 for blade angle and blade_angle so it advances
-    translate([0, -(blade_width + clearance)/2, -blade_thickness]) { // Shift blade to intersect the origin
+    translate([0, -blade_width/2 + clearance, -blade_thickness]) { // Shift blade to intersect the origin
       children();
     }
   }
