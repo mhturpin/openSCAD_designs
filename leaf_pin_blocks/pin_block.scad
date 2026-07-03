@@ -71,8 +71,8 @@ module base() {
     translate([0, 0, cap_thickness + 2]) cylinder(1.1, disk_radius + 0.2, disk_radius - 0.1);
 
     // Cut outs to make the leaf easy to remove
-    for (i = [0:3]) {
-      rotate(i*90) translate([0, 0, cap_thickness]) rotate_extrude(angle = 60) square([block_radius, 3.1]);
+    for (i = [0:2]) {
+      rotate(i*120) translate([0, 0, cap_thickness]) rotate_extrude(angle = 90) square([block_radius, 3.1]);
     }
   }
 }
