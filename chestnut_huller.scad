@@ -53,16 +53,23 @@ module disk() {
       }
       // Tooth notches
       for (i = [0:num_teeth-1]) {
-        rotate((360/num_teeth)*i) translate([disk_r - tooth_depth + root_r, root_r, 0]) {
-          // Remove rounded root
-          cylinder(2*disk_thickness, root_r, root_r);
-          // Cut off hook
-          translate([0, -root_r, 0]) cube([tooth_depth, 2*root_r, disk_thickness]);
-          // Slope back of tooth
-          a = 10;
-          y_offset = sin(a)*root_r;
-          x_offset = cos(a)*root_r;
-          translate([-x_offset, y_offset, 0]) rotate(-a) cube(50);
+        rotate((360/num_teeth)*i) translate([disk_r, root_r, 0]) {
+          translate([root_r - tooth_depth, 0, 0]) {
+            // Remove rounded root
+            cylinder(2*disk_thickness, root_r, root_r);
+            // Cut off hook
+            translate([0, -root_r, 0]) cube([tooth_depth, 2*root_r, disk_thickness]);
+            // Slope back of tooth
+            a = 10;
+            y_offset = sin(a)*root_r;
+            x_offset = cos(a)*root_r;
+            translate([-x_offset, y_offset, 0]) rotate(-a) cube(50);
+          }
+          // Round off sharp corner
+          difference() {
+            translate([-tip_r, -root_r - tip_r, 0]) cube(2*tip_r);
+            translate([-tip_r, -2*tip_r, -1])cylinder(2*tip_r + 2, tip_r, tip_r);
+          }
         }
       }
     }
@@ -86,11 +93,11 @@ module countersink() {
 
 difference() {
   disk();
-  *countersink();
+  countersink();
 }
 
 translate([0, 0, -disk_thickness - 10]) difference() {
   mirror([1, 0, 0]) disk();
-  *countersink();
+  countersink();
 }
 
