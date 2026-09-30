@@ -9,8 +9,8 @@ screw_r = 3/32*1_inch - 0.2;
 screw_head_r = 4.7;
 screw_head_depth = 5.5;
 root_r = 1_inch/4;
-tooth_depth = root_r*3;
-num_teeth = 7;
+tooth_depth = 1_inch;
+num_teeth = 6;
 tip_r = 1_inch/4;
 tip_base_r = disk_r - tip_r;
 
