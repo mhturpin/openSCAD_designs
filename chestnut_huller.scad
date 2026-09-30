@@ -75,6 +75,7 @@ module disk() {
     }
     // Mark the first tooth
     translate([axel_r + flange_width, 0, 0]) sphere(1);
+    translate([axel_r + flange_width, 0, disk_thickness]) sphere(1);
   }
 }
 
@@ -96,8 +97,8 @@ difference() {
   countersink();
 }
 
-translate([0, 0, -disk_thickness - 10]) difference() {
-  mirror([1, 0, 0]) disk();
-  countersink();
+translate([0, 0, -10]) difference() {
+  mirror([0, 0, 1]) disk();
+  translate([0, 0, -disk_thickness]) countersink();
 }
 
